@@ -5926,7 +5926,7 @@ function Dashboard({ currentUser, onLogout }) {
                 <span>ทั้งหมด <strong>{activeData.ongoingProjects.length.toLocaleString()}</strong> โปรเจกต์</span>
                 <span>ประหยัดเวลา <strong>{improvementMetrics.hoursSaved.toLocaleString()}</strong> ชั่วโมง/เดือน</span>
               </div>
-              <div style={{ overflowX: 'auto' }}>
+              <div className="table-responsive" style={{ overflowX: 'auto' }}>
                 <table className="details-table">
                   <thead><tr><th>โปรเจกต์</th><th>ประเภท</th><th>ผู้รับผิดชอบ</th><th>สถานะ</th><th>คืบหน้า</th><th>ประหยัดเวลา</th><th>ช่วงดำเนินการ</th><th>รายละเอียด</th><th>จัดการ</th></tr></thead>
                   <tbody>
@@ -5974,7 +5974,7 @@ function Dashboard({ currentUser, onLogout }) {
                 <span>ทั้งหมด <strong>{(activeData.vendorContracts || []).length.toLocaleString()}</strong> สัญญา</span>
                 <span>มูลค่ารวม <strong>{formatThaiBaht((activeData.vendorContracts || []).reduce((sum, contract) => sum + Number(contract.amount || 0), 0))}</strong></span>
               </div>
-              <div style={{ overflowX: 'auto' }}>
+              <div className="table-responsive" style={{ overflowX: 'auto' }}>
                 <table className="details-table">
                   <thead><tr><th>Vendor</th><th>บริการ</th><th>เลขที่สัญญา</th><th>ระยะสัญญา</th><th>รอบชำระ</th><th>มูลค่า</th><th>ผู้ติดต่อ</th><th>สถานะ</th><th>หมายเหตุ</th><th>จัดการ</th></tr></thead>
                   <tbody>
@@ -6707,7 +6707,7 @@ function Dashboard({ currentUser, onLogout }) {
               <button onClick={() => setActiveModal(null)} className="modal-close"><X size={20} /></button>
             </header>
             <div className="modal-body">
-              <div style={{ overflowX: 'auto' }}>
+              <div className="table-responsive" style={{ overflowX: 'auto' }}>
                 <table className="details-table">
                   <thead>
                     <tr>
@@ -6866,7 +6866,7 @@ function Dashboard({ currentUser, onLogout }) {
                   รวมราคา <strong>{formatThaiBaht(filteredSoftwareTotalCost)}</strong>
                 </span>
               </div>
-              <div style={{ overflowX: 'auto' }}>
+              <div className="table-responsive" style={{ overflowX: 'auto' }}>
                 <table className="details-table">
                   <thead>
                     <tr>
@@ -6940,7 +6940,7 @@ function Dashboard({ currentUser, onLogout }) {
               <button onClick={() => setActiveModal(null)} className="modal-close"><X size={20} /></button>
             </header>
             <div className="modal-body">
-              <div style={{ overflowX: 'auto' }}>
+              <div className="table-responsive" style={{ overflowX: 'auto' }}>
                 <table className="details-table">
                   <thead>
                     <tr>
@@ -6982,7 +6982,7 @@ function Dashboard({ currentUser, onLogout }) {
                 <span>ปิดแล้ว <strong className="bug-closed">{closedAppBugReports}</strong></span>
                 <span>ความรุนแรงสูง <strong className="bug-high">{highPriorityAppBugReports}</strong></span>
               </div>
-              <div style={{ overflowX: 'auto' }}>
+              <div className="table-responsive" style={{ overflowX: 'auto' }}>
                 <table className="details-table">
                   <thead>
                     <tr>
@@ -7029,7 +7029,7 @@ function Dashboard({ currentUser, onLogout }) {
               <button onClick={() => setActiveModal(null)} className="modal-close"><X size={20} /></button>
             </header>
             <div className="modal-body">
-              <div style={{ overflowX: 'auto' }}>
+              <div className="table-responsive" style={{ overflowX: 'auto' }}>
                 <table className="details-table">
                   <thead>
                     <tr>
@@ -7142,17 +7142,14 @@ function Dashboard({ currentUser, onLogout }) {
               </header>
               <div className="modal-body asset-list-modal-body">
                 {/* Search & Filters Bar */}
-                <div style={{
-                  display: 'flex',
-                  gap: '12px',
+                <div className="asset-filter-bar" style={{
                   marginBottom: '16px',
-                  flexWrap: 'wrap',
                   backgroundColor: 'rgba(255, 255, 255, 0.03)',
                   padding: '12px',
                   borderRadius: '8px',
                   border: '1px solid rgba(255, 255, 255, 0.08)'
                 }}>
-                  <div style={{ flex: '1 1 200px', minWidth: 0 }}>
+                  <div className="asset-filter-item">
                     <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>ค้นหาอุปกรณ์ / ชื่อผู้เบิก / หมายเลขเครื่อง</label>
                     <input 
                       type="text"
@@ -7169,7 +7166,7 @@ function Dashboard({ currentUser, onLogout }) {
                       }}
                     />
                   </div>
-                  <div style={{ flex: '0 1 200px', minWidth: 0 }}>
+                  <div className="asset-filter-item">
                     <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>กรองตามประเภท</label>
                     <select
                       value={assetTypeFilter}
@@ -7189,7 +7186,7 @@ function Dashboard({ currentUser, onLogout }) {
                       ))}
                     </select>
                   </div>
-                  <div style={{ flex: '0 1 200px', minWidth: 0 }}>
+                  <div className="asset-filter-item">
                     <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>กรองตามแผนก/ตำแหน่ง</label>
                     <select
                       value={assetDeptFilter}
@@ -7209,7 +7206,7 @@ function Dashboard({ currentUser, onLogout }) {
                       ))}
                     </select>
                   </div>
-                  <div style={{ flex: '0 1 150px', minWidth: 0 }}>
+                  <div className="asset-filter-item-sm">
                     <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>กรองตามสถานะ</label>
                     <select
                       value={assetStatusFilter}

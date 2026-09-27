@@ -4141,3 +4141,107 @@ div[style*="overflow-x"],
         gap: 10px;
     }
 }
+
+/* ============================================================
+   RESPONSIVE POLISH: iPhone, iPad, Tablet, and Smartphone
+   ============================================================ */
+
+/* Global container overflow guard */
+html, body, #root {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+/* Dedicated responsive table wrapper */
+.table-responsive {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+}
+
+/* Sticky modal headers across tablet and mobile */
+@media screen and (max-width: 1100px) {
+    .modal-header {
+        position: sticky;
+        top: 0;
+        z-index: 25;
+        background: #0f172a;
+        backdrop-filter: blur(20px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .dashboard-fullscreen-modal .modal-header {
+        background: #0d1422;
+    }
+    .return-registry-filters {
+        margin: 10px 0 14px 0 !important;
+        flex-wrap: wrap !important;
+        justify-content: flex-start !important;
+        width: 100% !important;
+    }
+    .return-registry-filters select {
+        flex: 1 1 160px;
+        min-width: 0;
+    }
+}
+
+/* iPad / Tablet layout enhancements (768px - 1100px) */
+@media screen and (min-width: 768px) and (max-width: 1100px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 16px;
+    }
+    .console-form {
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)) !important;
+    }
+}
+
+/* Smartphone & Mobile enhancements (<= 767px) */
+@media screen and (max-width: 767px) {
+    .form-footer {
+        flex-wrap: wrap;
+        width: 100%;
+        gap: 8px;
+    }
+    .form-footer button,
+    .form-footer .sidebar-btn {
+        flex: 1 1 130px;
+        min-height: 44px;
+        width: auto !important;
+        margin: 0 !important;
+    }
+    .modal-header h3 {
+        font-size: 1rem;
+        line-height: 1.3;
+    }
+    .console-topbar-title h3 {
+        font-size: 0.95rem;
+    }
+}
+
+/* iPhone SE & Compact Mobile (<= 390px) */
+@media screen and (max-width: 390px) {
+    .dashboard-container {
+        padding: 6px !important;
+    }
+    .dashboard-title h2 {
+        font-size: 0.95rem !important;
+    }
+    .modal-header h3 {
+        font-size: 0.88rem !important;
+    }
+    .workflow-header-actions {
+        width: 100%;
+    }
+    .return-view-switch,
+    .workflow-role-switch {
+        width: 100%;
+    }
+    .return-tab-count {
+        min-width: 18px;
+        height: 18px;
+        font-size: 10px;
+    }
+}

@@ -71,7 +71,7 @@
     width: min(540px, 100%);
     margin: 0 auto;
   }
-  .login-hero {
+  .login-visual {
     display: none;
   }
 }
