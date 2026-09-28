@@ -1930,6 +1930,7 @@ function Dashboard({ currentUser, onLogout }) {
   const [softwareCurrentUsers, setSoftwareCurrentUsers] = useState('');
   const [softwareSearch, setSoftwareSearch] = useState('');
   const [softwareBillingFilter, setSoftwareBillingFilter] = useState('all');
+  const [softwareFormExpanded, setSoftwareFormExpanded] = useState(false);
   const softwareExcelInputRef = useRef(null);
   const emptyVendorContract = { vendor: '', service: '', contractNo: '', startDate: '', endDate: '', billingCycle: 'รายเดือน', amount: '0', contact: '', status: 'ใช้งาน', notes: '' };
   const [vendorContractForm, setVendorContractForm] = useState(emptyVendorContract);
@@ -3752,6 +3753,7 @@ function Dashboard({ currentUser, onLogout }) {
   };
 
   const editSoftwareLicense = (item, index) => {
+    setSoftwareFormExpanded(true);
     setEditingSoftwareIndex(index);
     setSoftwareName(item.name || '');
     setSoftwareUsed(String(item.used ?? item.licenses ?? 0));
@@ -6751,7 +6753,17 @@ function Dashboard({ currentUser, onLogout }) {
               <button onClick={() => setActiveModal(null)} className="modal-close"><X size={20} /></button>
             </header>
             <div className="modal-body">
-              {isAdmin && <form onSubmit={saveSoftwareLicense} className="software-license-form">
+              {isAdmin && <button
+                type="button"
+                className="btn-details software-form-toggle"
+                onClick={() => setSoftwareFormExpanded(previous => !previous)}
+                aria-expanded={softwareFormExpanded}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: softwareFormExpanded ? '10px' : '16px' }}
+              >
+                {softwareFormExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                {softwareFormExpanded ? 'ซ่อนฟอร์มเพิ่ม / แก้ไข License' : 'เปิดฟอร์มเพิ่ม / แก้ไข License'}
+              </button>}
+              {isAdmin && softwareFormExpanded && <form onSubmit={saveSoftwareLicense} className="software-license-form">
                 <div className="form-grid">
                   <div className="form-group">
                     <label>ชื่อซอฟต์แวร์/โปรแกรม</label>
