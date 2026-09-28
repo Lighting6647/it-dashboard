@@ -6751,23 +6751,6 @@ function Dashboard({ currentUser, onLogout }) {
               <button onClick={() => setActiveModal(null)} className="modal-close"><X size={20} /></button>
             </header>
             <div className="modal-body">
-              <div className="metrics-row" style={{ marginBottom: '16px' }}>
-                <div className="metric-item">
-                  <div className="metric-label">License ใช้งานจริง</div>
-                  <div className="metric-value highlight-primary">{calculatedLicensesInUse.toLocaleString()} Core/User</div>
-                  <small style={{ color: 'var(--text-muted)' }}>รวมจากรายการซอฟต์แวร์ทั้งหมด</small>
-                </div>
-                <div className="metric-item">
-                  <div className="metric-label">License ว่างจริง</div>
-                  <div className="metric-value highlight-secondary">{calculatedLicensesVacant.toLocaleString()} Core/User</div>
-                  <small style={{ color: 'var(--text-muted)' }}>รวมจากรายการซอฟต์แวร์ทั้งหมด</small>
-                </div>
-                <div className="metric-item">
-                  <div className="metric-label">License รวมทั้งหมด</div>
-                  <div className="metric-value">{(calculatedLicensesInUse + calculatedLicensesVacant).toLocaleString()} Core/User</div>
-                  <small style={{ color: 'var(--text-muted)' }}>{detailedSoftwareLicenses.length.toLocaleString()} โปรแกรมในทะเบียน</small>
-                </div>
-              </div>
               {isAdmin && <form onSubmit={saveSoftwareLicense} className="software-license-form">
                 <div className="form-grid">
                   <div className="form-group">
