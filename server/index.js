@@ -980,7 +980,7 @@ app.patch('/api/assets/:sn', requireRole('admin'), async (req, res) => {
   const {
     user, position, itemType, additionalEquipment, deviceSerial, status, notes,
     submittedOn, respondent, date, softwareApp, registeredEmail,
-    additionalSerial, returnDueDate, auditDate, purchaseDate,
+    additionalSerial, returnDueDate, auditDate, purchaseDate, productionYear,
     warrantyExpiry, cost
   } = req.body || {};
   if (!Number.isInteger(sn) || sn <= 0 || !itemType || !status) {
@@ -1008,6 +1008,7 @@ app.patch('/api/assets/:sn', requireRole('admin'), async (req, res) => {
       returnDueDate,
       auditDate,
       purchaseDate,
+      productionYear,
       warrantyExpiry,
       cost
     }).filter(([, value]) => value !== undefined));
@@ -1507,6 +1508,7 @@ app.get('/api/inventory-data', (req, res) => {
       notes: row['หมายเหตุ'],
       inspectionDate: formatDate(row['วันที่ตรวจสอบ']),
       purchaseDate: formatDate(row['วันที่ซื้อ']),
+      productionYear: row['ปีที่ผลิต'] || row['ปีผลิต'] || '',
       warrantyEndDate: formatDate(row['วันหมดประกัน']),
       expense: Number(row['ค่าใช้จ่าย']) || 0
     }))));

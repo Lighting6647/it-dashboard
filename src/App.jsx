@@ -2654,6 +2654,7 @@ function Dashboard({ currentUser, onLogout }) {
   const [newAssetReturnDueDate, setNewAssetReturnDueDate] = useState('');
   const [newAssetAuditDate, setNewAssetAuditDate] = useState('');
   const [newAssetPurchaseDate, setNewAssetPurchaseDate] = useState('');
+  const [newAssetProductionYear, setNewAssetProductionYear] = useState('');
   const [newAssetWarrantyExpiry, setNewAssetWarrantyExpiry] = useState('');
   const [newAssetCost, setNewAssetCost] = useState('');
 
@@ -2993,8 +2994,9 @@ function Dashboard({ currentUser, onLogout }) {
         additionalSerial: newAssetAdditionalSerial,
         returnDueDate: newAssetReturnDueDate,
         auditDate: newAssetAuditDate,
-        purchaseDate: newAssetPurchaseDate,
-        warrantyExpiry: newAssetWarrantyExpiry,
+          purchaseDate: newAssetPurchaseDate,
+          productionYear: newAssetProductionYear,
+          warrantyExpiry: newAssetWarrantyExpiry,
         cost: newAssetCost
       };
 
@@ -3055,8 +3057,9 @@ function Dashboard({ currentUser, onLogout }) {
         additionalSerial: newAssetAdditionalSerial,
         returnDueDate: newAssetReturnDueDate,
         auditDate: newAssetAuditDate,
-        purchaseDate: newAssetPurchaseDate,
-        warrantyExpiry: newAssetWarrantyExpiry,
+          purchaseDate: newAssetPurchaseDate,
+          productionYear: newAssetProductionYear,
+          warrantyExpiry: newAssetWarrantyExpiry,
         cost: newAssetCost
       };
       setAssetsList(prev => {
@@ -3083,6 +3086,7 @@ function Dashboard({ currentUser, onLogout }) {
     setNewAssetReturnDueDate('');
     setNewAssetAuditDate('');
     setNewAssetPurchaseDate('');
+    setNewAssetProductionYear('');
     setNewAssetWarrantyExpiry('');
     setNewAssetCost('');
     setEditingAssetTagField(null);
@@ -3106,6 +3110,7 @@ function Dashboard({ currentUser, onLogout }) {
     setNewAssetReturnDueDate(asset.returnDueDate || '');
     setNewAssetAuditDate(asset.auditDate || '');
     setNewAssetPurchaseDate(asset.purchaseDate || '');
+    setNewAssetProductionYear(asset.productionYear || '');
     setNewAssetWarrantyExpiry(asset.warrantyExpiry || '');
     setNewAssetCost(asset.cost || '');
   };
@@ -3129,6 +3134,7 @@ function Dashboard({ currentUser, onLogout }) {
     setNewAssetReturnDueDate('');
     setNewAssetAuditDate('');
     setNewAssetPurchaseDate('');
+    setNewAssetProductionYear('');
     setNewAssetWarrantyExpiry('');
     setNewAssetCost('');
   };
@@ -3491,8 +3497,9 @@ function Dashboard({ currentUser, onLogout }) {
           additionalSerial: newAssetAdditionalSerial,
           returnDueDate: newAssetReturnDueDate,
           auditDate: newAssetAuditDate,
-          purchaseDate: newAssetPurchaseDate,
-          warrantyExpiry: newAssetWarrantyExpiry,
+        purchaseDate: newAssetPurchaseDate,
+        productionYear: newAssetProductionYear,
+        warrantyExpiry: newAssetWarrantyExpiry,
           cost: newAssetCost
         };
         assetsToSave = assetsList.map(asset => Number(asset.sn) === Number(editingAssetSn) ? {
@@ -3512,8 +3519,9 @@ function Dashboard({ currentUser, onLogout }) {
           additionalSerial: newAssetAdditionalSerial,
           returnDueDate: newAssetReturnDueDate,
           auditDate: newAssetAuditDate,
-          purchaseDate: newAssetPurchaseDate,
-          warrantyExpiry: newAssetWarrantyExpiry,
+        purchaseDate: newAssetPurchaseDate,
+        productionYear: newAssetProductionYear,
+        warrantyExpiry: newAssetWarrantyExpiry,
           cost: newAssetCost
         } : asset);
 
@@ -3567,6 +3575,7 @@ function Dashboard({ currentUser, onLogout }) {
         setNewAssetReturnDueDate('');
         setNewAssetAuditDate('');
         setNewAssetPurchaseDate('');
+        setNewAssetProductionYear('');
         setNewAssetWarrantyExpiry('');
         setNewAssetCost('');
       }
@@ -3602,11 +3611,11 @@ function Dashboard({ currentUser, onLogout }) {
   }, [currentMonth, data, fallbackMonthKey]);
 
   const mainAssetCategories = [
-    { label: 'PC', usefulLifeYears: 5, match: (type) => /computer\s*\(pc\)|\bpc\b/i.test(type) },
-    { label: 'Notebook', usefulLifeYears: 5, match: (type) => /notebook/i.test(type) },
-    { label: 'iMac', usefulLifeYears: 5, match: (type) => /imac/i.test(type) },
-    { label: 'iPhone', usefulLifeYears: 4, match: (type) => /iphone/i.test(type) },
-    { label: 'iPad', usefulLifeYears: 4, match: (type) => /ipad/i.test(type) },
+    { label: 'PC', usefulLifeYears: 3, match: (type) => /computer\s*\(pc\)|\bpc\b/i.test(type) },
+    { label: 'Notebook', usefulLifeYears: 3, match: (type) => /notebook/i.test(type) },
+    { label: 'iMac', match: (type) => /imac/i.test(type) },
+    { label: 'iPhone', match: (type) => /iphone/i.test(type) },
+    { label: 'iPad', match: (type) => /ipad/i.test(type) },
   ];
 
   // One registry row may contain more than one primary-device tag. Expand it
@@ -3636,32 +3645,34 @@ function Dashboard({ currentUser, onLogout }) {
   }, new Map()), ([label, count]) => ({ label, count }))
     .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, 'th'));
 
-  const parseAssetDate = (value) => {
-    if (!value) return null;
-    const text = String(value).trim();
-    const thaiDate = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-    if (thaiDate) {
-      const year = Number(thaiDate[3]) > 2400 ? Number(thaiDate[3]) - 543 : Number(thaiDate[3]);
-      const parsed = new Date(year, Number(thaiDate[2]) - 1, Number(thaiDate[1]));
-      return Number.isNaN(parsed.getTime()) ? null : parsed;
-    }
-    const parsed = new Date(text);
-    return Number.isNaN(parsed.getTime()) ? null : parsed;
-  };
-
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const nearExpiryLimit = new Date(today);
   nearExpiryLimit.setFullYear(nearExpiryLimit.getFullYear() + 1);
 
-  const primaryExpiringAssets = primaryAssetEntries.filter(({ asset, category }) => {
-    const startDate = parseAssetDate(asset.purchaseDate) || parseAssetDate(asset.date);
-    if (!startDate || asset.status === 'สูญหาย') return false;
-
-    const modelExpiryDate = new Date(startDate);
-    modelExpiryDate.setFullYear(modelExpiryDate.getFullYear() + category.usefulLifeYears);
-    return modelExpiryDate >= today && modelExpiryDate <= nearExpiryLimit;
-  }).length;
+  const normalizeProductionYear = (value) => {
+    const matchedYear = String(value || '').match(/\d{4}/)?.[0];
+    if (!matchedYear) return null;
+    const year = Number(matchedYear);
+    const christianYear = year > 2400 ? year - 543 : year;
+    return christianYear >= 1900 && christianYear <= 2200 ? christianYear : null;
+  };
+  const primaryExpiringAssetDetails = primaryAssetEntries.flatMap(({ asset, category }) => {
+    if (!category.usefulLifeYears || normalizeAssetStatus(asset.status) === 'สูญหาย') return [];
+    const productionYear = normalizeProductionYear(asset.productionYear);
+    if (!productionYear) return [];
+    const modelExpiryDate = new Date(productionYear + category.usefulLifeYears, 11, 31);
+    if (modelExpiryDate < today || modelExpiryDate > nearExpiryLimit) return [];
+    return [{
+      id: asset.deviceSerial || asset.sn,
+      type: category.label,
+      model: asset.itemType || category.label,
+      dept: asset.position || '-',
+      productionYear,
+      expDate: modelExpiryDate.toLocaleDateString('th-TH'),
+    }];
+  });
+  const primaryExpiringAssets = primaryExpiringAssetDetails.length;
 
   const detailedSoftwareLicenses = (activeData?.softwareExpiringDetails || []).filter((item) => item.isLicenseRecord);
   const detailedLicensesInUse = detailedSoftwareLicenses.reduce((sum, item) => sum + Number(item.used || 0), 0);
@@ -4220,7 +4231,7 @@ function Dashboard({ currentUser, onLogout }) {
       return;
     }
     const wb = XLSX.utils.book_new();
-    const headers = ['Number', 'วันที่ Submit', 'ผู้รับผิดชอบ', 'วันที่เบิกใช้งาน', 'ผู้เบิกใช้งาน', 'ตำแหน่ง/แผนก', 'รายการอุปกรณ์หลัก', 'อุปกรณ์เพิ่มเติม', 'ซอฟต์แวร์/App', 'อีเมลที่ลงทะเบียน', 'หมายเลขอุปกรณ์', 'หมายเลขอุปกรณ์เพิ่มเติม', 'กำหนดคืน', 'สถานะ', 'หมายเหตุ', 'วันที่ตรวจสอบ', 'วันที่ซื้อ', 'วันหมดประกัน', 'ค่าใช้จ่าย'];
+    const headers = ['Number', 'วันที่ Submit', 'ผู้รับผิดชอบ', 'วันที่เบิกใช้งาน', 'ผู้เบิกใช้งาน', 'ตำแหน่ง/แผนก', 'รายการอุปกรณ์หลัก', 'อุปกรณ์เพิ่มเติม', 'ซอฟต์แวร์/App', 'อีเมลที่ลงทะเบียน', 'หมายเลขอุปกรณ์', 'หมายเลขอุปกรณ์เพิ่มเติม', 'กำหนดคืน', 'สถานะ', 'หมายเหตุ', 'วันที่ตรวจสอบ', 'วันที่ซื้อ', 'ปีที่ผลิต', 'วันหมดประกัน', 'ค่าใช้จ่าย'];
     
     const rows = assetsToExport.map((asset, idx) => [
       idx + 1,
@@ -4240,6 +4251,7 @@ function Dashboard({ currentUser, onLogout }) {
       asset.notes || '',
       asset.inspectionDate || '',
       asset.purchaseDate || '',
+      asset.productionYear || '',
       asset.warrantyEndDate || '',
       asset.expense || ''
     ]);
@@ -4252,8 +4264,8 @@ function Dashboard({ currentUser, onLogout }) {
 
   const exportAssetTemplate = () => {
     const wb = XLSX.utils.book_new();
-    const headers = ['Nember', 'Submitted on', 'Respondents', 'วันที่เบิกใช้งาน', 'บุคคลเบิกใช้อุปกรณ์', 'ตำแหน่ง', 'รายการอุปกรณ์หลัก', 'อุปกรณ์เพิ่มเติมที่ต้องการเบิก', 'ซอต์ฟแวร์/ App', 'เมลที่ลงทะเบียน', 'หมายเลขอุปกรณ์ (เช่น  Ipad 016)', 'หมายเลขอุปกรณ์ เพิ่มเติม  (เช่น  สาย อะเเดปเตอร์ ipad-011))', 'กำหนดคืนอุปกรณ์', 'สถานะ', 'หมายเหตุ', 'วันที่ตรวจสอบ', 'วันที่ซื้อ', 'วันหมดประกัน', 'ค่าใช้จ่าย'];
-    const exampleRow = [1, 'YYYY-MM-DD', 'ชื่อผู้รับผิดชอบ', 'YYYY-MM-DD', 'ชื่อผู้เบิก', 'IT', 'Notebook', 'Mouse', 'Office 365', 'test@example.com', 'NB-001', 'MS-001', 'YYYY-MM-DD', 'ใช้งาน', '', '', '', '', '0'];
+    const headers = ['Nember', 'Submitted on', 'Respondents', 'วันที่เบิกใช้งาน', 'บุคคลเบิกใช้อุปกรณ์', 'ตำแหน่ง', 'รายการอุปกรณ์หลัก', 'อุปกรณ์เพิ่มเติมที่ต้องการเบิก', 'ซอต์ฟแวร์/ App', 'เมลที่ลงทะเบียน', 'หมายเลขอุปกรณ์ (เช่น  Ipad 016)', 'หมายเลขอุปกรณ์ เพิ่มเติม  (เช่น  สาย อะเเดปเตอร์ ipad-011))', 'กำหนดคืนอุปกรณ์', 'สถานะ', 'หมายเหตุ', 'วันที่ตรวจสอบ', 'วันที่ซื้อ', 'ปีที่ผลิต', 'วันหมดประกัน', 'ค่าใช้จ่าย'];
+    const exampleRow = [1, 'YYYY-MM-DD', 'ชื่อผู้รับผิดชอบ', 'YYYY-MM-DD', 'ชื่อผู้เบิก', 'IT', 'Notebook', 'Mouse', 'Office 365', 'test@example.com', 'NB-001', 'MS-001', 'YYYY-MM-DD', 'ใช้งาน', '', '', '', 2024, '', '0'];
     const ws = XLSX.utils.aoa_to_sheet([headers, exampleRow]);
     ws['!cols'] = headers.map(h => ({ wch: Math.max(h.length + 4, 15) }));
     XLSX.utils.book_append_sheet(wb, ws, 'Inventory');
@@ -4577,6 +4589,7 @@ function Dashboard({ currentUser, onLogout }) {
               returnDueDate: row['กำหนดคืนอุปกรณ์'] || '',
               inspectionDate: row['วันที่ตรวจสอบ'] || '',
               purchaseDate: row['วันที่ซื้อ'] || '',
+              productionYear: row['ปีที่ผลิต'] || row['ปีผลิต'] || '',
               warrantyEndDate: row['วันหมดประกัน'] || '',
               expense: Number(row['ค่าใช้จ่าย']) || 0
             };
@@ -5624,7 +5637,7 @@ function Dashboard({ currentUser, onLogout }) {
               <div className="metric-item">
                 <div className="metric-label">ใกล้หมดอายุ</div>
                 <div className="metric-value highlight-warning">{primaryExpiringAssets} เครื่อง</div>
-                <div className="metric-note">เหลืออายุรุ่นไม่เกิน 1 ปี</div>
+                <div className="metric-note">Notebook/PC อายุ 3 ปี อ้างอิงปีที่ผลิต</div>
               </div>
               <div className="metric-item">
                 <div className="metric-label">เครื่องว่าง (พร้อมใช้)</div>
@@ -6160,6 +6173,7 @@ function Dashboard({ currentUser, onLogout }) {
             asset.notes,
             asset.inspectionDate,
             asset.purchaseDate,
+            asset.productionYear,
             asset.warrantyEndDate,
             asset.expense
           ].some(value => String(value || '').toLocaleLowerCase('th-TH').includes(query));
@@ -6362,13 +6376,14 @@ function Dashboard({ currentUser, onLogout }) {
                           <th>หมายเหตุ</th>
                           <th>วันที่ตรวจสอบ</th>
                           <th>วันที่ซื้อ</th>
+                          <th>ปีที่ผลิต</th>
                           <th>วันหมดประกัน</th>
                           <th>ค่าใช้จ่าย</th>
                         </tr>
                       </thead>
                       <tbody>
                         {registryAssets.length === 0 ? (
-                          <tr><td colSpan="17" className="workflow-empty">ไม่พบอุปกรณ์ที่ตรงตามเงื่อนไข</td></tr>
+                          <tr><td colSpan="18" className="workflow-empty">ไม่พบอุปกรณ์ที่ตรงตามเงื่อนไข</td></tr>
                         ) : registryAssets.map((asset, index) => (
                           <tr key={asset.sn ?? index}>
                             <td><strong>{index + 1}</strong></td>
@@ -6386,6 +6401,7 @@ function Dashboard({ currentUser, onLogout }) {
                             <td>{asset.notes || '-'}</td>
                             <td>{asset.inspectionDate || '-'}</td>
                             <td>{asset.purchaseDate || '-'}</td>
+                            <td>{asset.productionYear || '-'}</td>
                             <td>{asset.warrantyEndDate || '-'}</td>
                             <td>{Number(asset.expense || 0).toLocaleString('th-TH')} บาท</td>
                           </tr>
@@ -6716,24 +6732,26 @@ function Dashboard({ currentUser, onLogout }) {
                       <th>รหัสทรัพย์สิน</th>
                       <th>ประเภท</th>
                       <th>รุ่น</th>
+                      <th>ปีที่ผลิต</th>
                       <th>แผนก</th>
                       <th>วันที่หมดอายุ</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {activeData.assetsExpiringDetails.length > 0 ? (
-                      activeData.assetsExpiringDetails.map((asset, idx) => (
+                    {primaryExpiringAssetDetails.length > 0 ? (
+                      primaryExpiringAssetDetails.map((asset, idx) => (
                         <tr key={idx}>
                           <td><strong>{asset.id}</strong></td>
                           <td>{asset.type}</td>
                           <td>{asset.model}</td>
+                          <td>{asset.productionYear}</td>
                           <td>{asset.dept}</td>
                           <td><span style={{ color: 'var(--warning)' }}>{asset.expDate}</span></td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="5" style={{ textAlign: 'center' }}>ไม่มีข้อมูลการเตือนหมดอายุของฮาร์ดแวร์</td>
+                        <td colSpan="6" style={{ textAlign: 'center' }}>ไม่มี Notebook หรือ PC ที่เหลืออายุการใช้งานไม่เกิน 1 ปี</td>
                       </tr>
                     )}
                   </tbody>
@@ -7242,6 +7260,7 @@ function Dashboard({ currentUser, onLogout }) {
                         <th>หมายเหตุ</th>
                         <th>วันที่ตรวจสอบ</th>
                         <th>วันที่ซื้อ</th>
+                        <th>ปีที่ผลิต</th>
                         <th>วันหมดประกัน</th>
                         <th>ค่าใช้จ่าย</th>
                       </tr>
@@ -7277,13 +7296,14 @@ function Dashboard({ currentUser, onLogout }) {
                             <td>{asset.notes || '-'}</td>
                             <td>{asset.inspectionDate || '-'}</td>
                             <td>{asset.purchaseDate || '-'}</td>
+                            <td>{asset.productionYear || '-'}</td>
                             <td>{asset.warrantyEndDate || '-'}</td>
                             <td>{Number(asset.expense || 0).toLocaleString('th-TH')} บาท</td>
                           </tr>
                         ))
                       ) : (
                         <tr>
-                          <td colSpan="18" style={{ textAlign: 'center' }}>ไม่พบคลังอุปกรณ์ที่ตรงตามเงื่อนไข</td>
+                          <td colSpan="19" style={{ textAlign: 'center' }}>ไม่พบคลังอุปกรณ์ที่ตรงตามเงื่อนไข</td>
                       </tr>
                     )}
                   </tbody>
@@ -7307,7 +7327,7 @@ function Dashboard({ currentUser, onLogout }) {
           asset.sn, asset.submittedOn, asset.respondent, asset.date, asset.user, asset.position,
           asset.itemType, asset.additionalEquipment, asset.softwareApp, asset.registeredEmail,
           asset.deviceSerial, asset.additionalSerial, asset.returnDueDate, asset.status,
-          asset.notes, asset.inspectionDate, asset.purchaseDate, asset.warrantyEndDate, asset.expense
+          asset.notes, asset.inspectionDate, asset.purchaseDate, asset.productionYear, asset.warrantyEndDate, asset.expense
         ].some((value) => String(value ?? '').toLocaleLowerCase('th-TH').includes(consoleAssetQuery)))
         .sort((a, b) => String(a.position || '').localeCompare(String(b.position || ''), 'th')
           || Number(a.sn || 0) - Number(b.sn || 0));
@@ -7650,6 +7670,10 @@ function Dashboard({ currentUser, onLogout }) {
                         <input type="text" value={newAssetPurchaseDate} onChange={e => setNewAssetPurchaseDate(e.target.value)} placeholder="วันที่ซื้อ" className="console-input" />
                       </div>
                       <div className="console-field">
+                        <span className="console-label">ปีที่ผลิตของรุ่น</span>
+                        <input type="number" min="1900" max="2600" value={newAssetProductionYear} onChange={e => setNewAssetProductionYear(e.target.value)} placeholder="เช่น 2024 หรือ 2567" className="console-input" />
+                      </div>
+                      <div className="console-field">
                         <span className="console-label">วันหมดประกัน</span>
                         <input type="text" value={newAssetWarrantyExpiry} onChange={e => setNewAssetWarrantyExpiry(e.target.value)} placeholder="วันหมดประกัน" className="console-input" />
                       </div>
@@ -7713,6 +7737,7 @@ function Dashboard({ currentUser, onLogout }) {
                             <th>หมายเหตุ</th>
                             <th>วันที่ตรวจสอบ</th>
                             <th>วันที่ซื้อ</th>
+                            <th>ปีที่ผลิต</th>
                             <th>วันหมดประกัน</th>
                             <th>ค่าใช้จ่าย</th>
                             <th>จัดการ</th>
@@ -7726,7 +7751,7 @@ function Dashboard({ currentUser, onLogout }) {
                             <Fragment key={asset.sn ?? idx}>
                               {showGroup && (
                                 <tr className="lark-group-row">
-                                  <td colSpan="20">
+                                  <td colSpan="21">
                                     <span>{asset.position || 'ไม่ระบุแผนก'}</span>
                                     <small>{consoleAssets.filter((row) => String(row.position || '-') === String(asset.position || '-')).length} รายการ</small>
                                   </td>
@@ -7810,6 +7835,7 @@ function Dashboard({ currentUser, onLogout }) {
                               <td>{asset.notes || '-'}</td>
                               <td>{asset.inspectionDate || '-'}</td>
                               <td>{asset.purchaseDate || '-'}</td>
+                              <td>{asset.productionYear || '-'}</td>
                               <td>{asset.warrantyEndDate || '-'}</td>
                               <td className="lark-number">{Number(asset.expense || 0).toLocaleString('th-TH')}</td>
                               <td>
