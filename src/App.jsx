@@ -2657,6 +2657,11 @@ function Dashboard({ currentUser, onLogout }) {
   const [newAssetProductionYear, setNewAssetProductionYear] = useState('');
   const [newAssetWarrantyExpiry, setNewAssetWarrantyExpiry] = useState('');
   const [newAssetCost, setNewAssetCost] = useState('');
+  const [newAssetMarketModel, setNewAssetMarketModel] = useState('');
+  const [newAssetMarketPrice, setNewAssetMarketPrice] = useState('');
+  const [newAssetPriceAvailability, setNewAssetPriceAvailability] = useState('current');
+  const [newAssetPriceSourceUrl, setNewAssetPriceSourceUrl] = useState('');
+  const [newAssetPriceCheckedAt, setNewAssetPriceCheckedAt] = useState('');
 
 
   // New Ticket creation states
@@ -2997,7 +3002,12 @@ function Dashboard({ currentUser, onLogout }) {
           purchaseDate: newAssetPurchaseDate,
           productionYear: newAssetProductionYear,
           warrantyExpiry: newAssetWarrantyExpiry,
-        cost: newAssetCost
+        cost: newAssetCost,
+        marketModel: newAssetMarketModel,
+        marketPrice: Number(newAssetMarketPrice) || 0,
+        priceAvailability: newAssetPriceAvailability,
+        priceSourceUrl: newAssetPriceSourceUrl,
+        priceCheckedAt: newAssetPriceCheckedAt
       };
 
       setConsoleSaving(true);
@@ -3060,7 +3070,12 @@ function Dashboard({ currentUser, onLogout }) {
           purchaseDate: newAssetPurchaseDate,
           productionYear: newAssetProductionYear,
           warrantyExpiry: newAssetWarrantyExpiry,
-        cost: newAssetCost
+        cost: newAssetCost,
+        marketModel: newAssetMarketModel,
+        marketPrice: Number(newAssetMarketPrice) || 0,
+        priceAvailability: newAssetPriceAvailability,
+        priceSourceUrl: newAssetPriceSourceUrl,
+        priceCheckedAt: newAssetPriceCheckedAt
       };
       setAssetsList(prev => {
         const updated = [...prev, newAsset];
@@ -3089,6 +3104,11 @@ function Dashboard({ currentUser, onLogout }) {
     setNewAssetProductionYear('');
     setNewAssetWarrantyExpiry('');
     setNewAssetCost('');
+    setNewAssetMarketModel('');
+    setNewAssetMarketPrice('');
+    setNewAssetPriceAvailability('current');
+    setNewAssetPriceSourceUrl('');
+    setNewAssetPriceCheckedAt('');
     setEditingAssetTagField(null);
   };
 
@@ -3113,6 +3133,11 @@ function Dashboard({ currentUser, onLogout }) {
     setNewAssetProductionYear(asset.productionYear || '');
     setNewAssetWarrantyExpiry(asset.warrantyExpiry || '');
     setNewAssetCost(asset.cost || '');
+    setNewAssetMarketModel(asset.marketModel || '');
+    setNewAssetMarketPrice(asset.marketPrice || '');
+    setNewAssetPriceAvailability(asset.priceAvailability || 'current');
+    setNewAssetPriceSourceUrl(asset.priceSourceUrl || '');
+    setNewAssetPriceCheckedAt(asset.priceCheckedAt || '');
   };
 
   const handleCancelEditAsset = () => {
@@ -3499,8 +3524,13 @@ function Dashboard({ currentUser, onLogout }) {
           auditDate: newAssetAuditDate,
         purchaseDate: newAssetPurchaseDate,
         productionYear: newAssetProductionYear,
-        warrantyExpiry: newAssetWarrantyExpiry,
-          cost: newAssetCost
+          warrantyExpiry: newAssetWarrantyExpiry,
+          cost: newAssetCost,
+          marketModel: newAssetMarketModel,
+          marketPrice: Number(newAssetMarketPrice) || 0,
+          priceAvailability: newAssetPriceAvailability,
+          priceSourceUrl: newAssetPriceSourceUrl,
+          priceCheckedAt: newAssetPriceCheckedAt
         };
         assetsToSave = assetsList.map(asset => Number(asset.sn) === Number(editingAssetSn) ? {
           ...asset,
@@ -3522,7 +3552,12 @@ function Dashboard({ currentUser, onLogout }) {
         purchaseDate: newAssetPurchaseDate,
         productionYear: newAssetProductionYear,
         warrantyExpiry: newAssetWarrantyExpiry,
-          cost: newAssetCost
+          cost: newAssetCost,
+          marketModel: newAssetMarketModel,
+          marketPrice: Number(newAssetMarketPrice) || 0,
+          priceAvailability: newAssetPriceAvailability,
+          priceSourceUrl: newAssetPriceSourceUrl,
+          priceCheckedAt: newAssetPriceCheckedAt
         } : asset);
 
         dataToSave = {
@@ -3637,6 +3672,8 @@ function Dashboard({ currentUser, onLogout }) {
   const vacantStockCount = assetsList.filter((asset) => normalizeAssetStatus(asset.status) === 'ว่าง').length;
   const warehouseBrokenCount = assetsList.filter((asset) => ['รอซ่อม', 'ชำรุด'].includes(normalizeAssetStatus(asset.status))).length;
   const warehouseLostCount = assetsList.filter((asset) => normalizeAssetStatus(asset.status) === 'สูญหาย').length;
+  const pricedAssets = assetsList.filter((asset) => Number(asset.marketPrice) > 0 && normalizeAssetStatus(asset.status) !== 'สูญหาย');
+  const calculatedAssetValue = pricedAssets.reduce((sum, asset) => sum + Number(asset.marketPrice || 0), 0);
   const primaryVacantStockEntries = primaryAssetEntries.filter(({ asset }) => normalizeAssetStatus(asset.status) === 'ว่าง');
   const vacantStockBreakdown = Array.from(primaryVacantStockEntries.reduce((groups, entry) => {
     const label = entry.category.label;
@@ -5632,7 +5669,8 @@ function Dashboard({ currentUser, onLogout }) {
               </div>
               <div className="metric-item full-width">
                 <div className="metric-label">มูลค่าทรัพย์สิน IT รวม</div>
-                <div className="metric-value">{formatThaiBaht(activeData.assetValue)}</div>
+                <div className="metric-value">{formatThaiBaht(calculatedAssetValue)}</div>
+                <div className="metric-note">ราคาตลาดที่มีแหล่งอ้างอิง {pricedAssets.length} จาก {warehouseTotalCount} เครื่อง</div>
               </div>
               <div className="metric-item">
                 <div className="metric-label">ใกล้หมดอายุ</div>
@@ -7681,6 +7719,29 @@ function Dashboard({ currentUser, onLogout }) {
                         <span className="console-label">ค่าใช้จ่าย</span>
                         <input type="text" value={newAssetCost} onChange={e => setNewAssetCost(e.target.value)} placeholder="ค่าใช้จ่าย" className="console-input" />
                       </div>
+                      <div className="console-field">
+                        <span className="console-label">ยี่ห้อ/รุ่นสำหรับค้นหาราคา*</span>
+                        <input type="text" value={newAssetMarketModel} onChange={e => setNewAssetMarketModel(e.target.value)} placeholder="เช่น Lenovo ThinkPad E14 Gen 5 21JK" className="console-input" />
+                      </div>
+                      <div className="console-field">
+                        <span className="console-label">ราคาตลาดอ้างอิง (บาท)</span>
+                        <input type="number" min="0" value={newAssetMarketPrice} onChange={e => setNewAssetMarketPrice(e.target.value)} placeholder="0" className="console-input" />
+                      </div>
+                      <div className="console-field">
+                        <span className="console-label">สถานะราคา</span>
+                        <select value={newAssetPriceAvailability} onChange={e => setNewAssetPriceAvailability(e.target.value)} className="console-input">
+                          <option value="current">ราคาปัจจุบัน (ยังมีขาย)</option>
+                          <option value="latest">ราคาขายล่าสุด (เลิกขายแล้ว)</option>
+                        </select>
+                      </div>
+                      <div className="console-field">
+                        <span className="console-label">ลิงก์แหล่งราคา</span>
+                        <input type="url" value={newAssetPriceSourceUrl} onChange={e => setNewAssetPriceSourceUrl(e.target.value)} placeholder="https://..." className="console-input" />
+                      </div>
+                      <div className="console-field">
+                        <span className="console-label">วันที่ตรวจสอบราคา</span>
+                        <input type="date" value={newAssetPriceCheckedAt} onChange={e => setNewAssetPriceCheckedAt(e.target.value)} className="console-input" />
+                      </div>
                       
                       {/* Export Actions */}
                       <div className="console-field" style={{ display: 'flex', gap: '8px', alignItems: 'flex-end', minWidth: '220px' }}>
@@ -7740,6 +7801,9 @@ function Dashboard({ currentUser, onLogout }) {
                             <th>ปีที่ผลิต</th>
                             <th>วันหมดประกัน</th>
                             <th>ค่าใช้จ่าย</th>
+                            <th>รุ่นอ้างอิงราคา</th>
+                            <th>ราคาตลาด</th>
+                            <th>แหล่งราคา/ตรวจสอบ</th>
                             <th>จัดการ</th>
                           </tr>
                         </thead>
@@ -7751,7 +7815,7 @@ function Dashboard({ currentUser, onLogout }) {
                             <Fragment key={asset.sn ?? idx}>
                               {showGroup && (
                                 <tr className="lark-group-row">
-                                  <td colSpan="21">
+                                  <td colSpan="24">
                                     <span>{asset.position || 'ไม่ระบุแผนก'}</span>
                                     <small>{consoleAssets.filter((row) => String(row.position || '-') === String(asset.position || '-')).length} รายการ</small>
                                   </td>
@@ -7838,6 +7902,12 @@ function Dashboard({ currentUser, onLogout }) {
                               <td>{asset.productionYear || '-'}</td>
                               <td>{asset.warrantyEndDate || '-'}</td>
                               <td className="lark-number">{Number(asset.expense || 0).toLocaleString('th-TH')}</td>
+                              <td>{asset.marketModel || <span style={{ color: 'var(--warning)' }}>รอระบุรุ่น</span>}</td>
+                              <td className="lark-number">{Number(asset.marketPrice || 0) > 0 ? formatThaiBaht(asset.marketPrice) : '-'}</td>
+                              <td>
+                                {asset.priceSourceUrl ? <a href={asset.priceSourceUrl} target="_blank" rel="noreferrer">{asset.priceAvailability === 'latest' ? 'ราคาขายล่าสุด' : 'ราคาปัจจุบัน'}</a> : '-'}
+                                {asset.priceCheckedAt ? <small style={{ display: 'block' }}>{asset.priceCheckedAt}</small> : null}
+                              </td>
                               <td>
                                 <div style={{ display: 'flex', gap: '6px' }}>
                                   <button onClick={() => handleLoadEditAsset(asset)} className="btn-details" style={{ padding: '2px 8px', fontSize: '0.75rem', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', border: 'none' }}>แก้ไข</button>

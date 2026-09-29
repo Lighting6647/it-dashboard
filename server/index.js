@@ -981,7 +981,8 @@ app.patch('/api/assets/:sn', requireRole('admin'), async (req, res) => {
     user, position, itemType, additionalEquipment, deviceSerial, status, notes,
     submittedOn, respondent, date, softwareApp, registeredEmail,
     additionalSerial, returnDueDate, auditDate, purchaseDate, productionYear,
-    warrantyExpiry, cost
+    warrantyExpiry, cost, marketModel, marketPrice, priceAvailability,
+    priceSourceUrl, priceCheckedAt
   } = req.body || {};
   if (!Number.isInteger(sn) || sn <= 0 || !itemType || !status) {
     return res.status(400).json({ error: 'ข้อมูลทรัพย์สินไม่ถูกต้อง' });
@@ -1010,7 +1011,12 @@ app.patch('/api/assets/:sn', requireRole('admin'), async (req, res) => {
       purchaseDate,
       productionYear,
       warrantyExpiry,
-      cost
+      cost,
+      marketModel,
+      marketPrice: marketPrice === undefined ? undefined : Number(marketPrice) || 0,
+      priceAvailability,
+      priceSourceUrl,
+      priceCheckedAt
     }).filter(([, value]) => value !== undefined));
     const details = {
       ...(assetResult.rows[0].details || {}),
