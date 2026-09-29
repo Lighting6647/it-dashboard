@@ -1894,12 +1894,13 @@ function Dashboard({ currentUser, onLogout }) {
   const [assetTypeFilter, setAssetTypeFilter] = useState('');
   const [assetRequests, setAssetRequests] = useState([]);
   const [assetRequestLoading, setAssetRequestLoading] = useState(false);
-  const [assetRequestForm, setAssetRequestForm] = useState({ requester: '', department: '', itemType: '', purpose: '', requestedDate: new Date().toISOString().slice(0, 10), notes: '' });
+  const [assetRequestForm, setAssetRequestForm] = useState({ requester: '', department: '', itemType: '', purpose: '', requestedDate: new Date().toISOString().slice(0, 10), notes: '', workflowType: '' });
   const [assetWorkflowRole, setAssetWorkflowRole] = useState('requester');
   const [assetRequesterSearch, setAssetRequesterSearch] = useState('');
   const [assetReturnSearch, setAssetReturnSearch] = useState('');
   const [assetReturnIdentity, setAssetReturnIdentity] = useState('');
   const [assetReturnView, setAssetReturnView] = useState('returns');
+  const [operationsLogView, setOperationsLogView] = useState('checklist');
   const notificationInitializedRef = useRef(false);
   const [currentMonth, setCurrentMonth] = useState(() => {
     const keys = Object.keys(data || {}).sort((a, b) => b.localeCompare(a));
@@ -2147,7 +2148,7 @@ function Dashboard({ currentUser, onLogout }) {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'ส่งคำขอไม่สำเร็จ');
-      setAssetRequestForm({ requester: '', department: '', itemType: '', purpose: '', requestedDate: new Date().toISOString().slice(0, 10), notes: '' });
+      setAssetRequestForm({ requester: '', department: '', itemType: '', purpose: '', requestedDate: new Date().toISOString().slice(0, 10), notes: '', workflowType: '' });
       await loadAssetRequests();
       alert(result.count > 1
         ? `ส่งคำขอเบิก ${result.count} เครื่องสำเร็จ เลขที่ #${result.ids.join(', #')}`
@@ -2228,9 +2229,19 @@ function Dashboard({ currentUser, onLogout }) {
       payload.note = note;
       payload.reviewer = window.prompt('ชื่อผู้พิจารณา') || 'IT';
     } else if (action === 'issue') {
+      const workflowType = window.prompt('ประเภทการดำเนินการ: เบิก, เปลี่ยนอุปกรณ์ หรือ ลาออก', request.workflow_type === 'replacement' ? 'เปลี่ยนอุปกรณ์' : request.workflow_type === 'resignation' ? 'ลาออก' : 'เบิก');
+      if (workflowType === null) return;
+      const workflowMap = { 'เบิก': 'checkout', 'เปลี่ยนอุปกรณ์': 'replacement', 'ลาออก': 'resignation' };
+      if (!workflowMap[workflowType]) return alert('กรุณาระบุ เบิก, เปลี่ยนอุปกรณ์ หรือ ลาออก');
+      payload.workflowType = workflowMap[workflowType];
       if (!window.confirm(`ยืนยันส่งมอบอุปกรณ์ให้ ${request.requester}?`)) return;
       payload.reviewer = window.prompt('ชื่อเจ้าหน้าที่ผู้ส่งมอบ') || request.reviewer || 'IT';
     } else if (action === 'request_return') {
+      const workflowType = window.prompt('เหตุผลการคืน: เปลี่ยนอุปกรณ์, เบิก หรือ ลาออก', request.workflow_type === 'replacement' ? 'เปลี่ยนอุปกรณ์' : request.workflow_type === 'resignation' ? 'ลาออก' : 'เบิก');
+      if (workflowType === null) return;
+      const workflowMap = { 'เบิก': 'checkout', 'เปลี่ยนอุปกรณ์': 'replacement', 'ลาออก': 'resignation' };
+      if (!workflowMap[workflowType]) return alert('กรุณาระบุ เบิก, เปลี่ยนอุปกรณ์ หรือ ลาออก');
+      payload.workflowType = workflowMap[workflowType];
       if (!assetReturnIdentity.trim()) return alert('กรุณาระบุชื่อผู้คืนก่อน');
       if (!window.confirm(`ยืนยันแจ้งขอคืนอุปกรณ์ ${request.device_serial || request.item_type} ให้ IT ตรวจรับใช่หรือไม่?`)) return;
       payload.requesterIdentity = assetReturnIdentity.trim();
@@ -4492,12 +4503,14 @@ function Dashboard({ currentUser, onLogout }) {
     XLSX.utils.book_append_sheet(wb, expSwWs, 'โปรแกรมใกล้หมดอายุ');
 
     // Sheet 8: Employee equipment issue and return activity
-    const movementHeaders = ['เลขที่คำขอ', 'พนักงาน', 'แผนก', 'อุปกรณ์ที่ขอ', 'หมายเลขเครื่อง', 'วัตถุประสงค์', 'วันที่ขอเบิก', 'วันที่ส่งมอบ', 'กำหนดคืน', 'วันที่คืนจริง', 'สภาพตอนคืน', 'สถานะ', 'ผู้ตรวจสอบ', 'หมายเหตุ'];
+    const movementHeaders = ['เลขที่คำขอ', 'พนักงาน', 'แผนก', 'ประเภทการดำเนินการ', 'อุปกรณ์ที่ขอ', 'หมายเลขเครื่อง', 'วัตถุประสงค์', 'วันที่ขอเบิก', 'วันที่ส่งมอบ', 'กำหนดคืน', 'วันที่คืนจริง', 'สภาพตอนคืน', 'สถานะ', 'ผู้ตรวจสอบ', 'หมายเหตุ'];
     const requestStatusLabels = { pending: 'รออนุมัติ', approved: 'อนุมัติแล้ว', issued: 'ส่งมอบแล้ว', overdue: 'เกินกำหนด', return_requested: 'รอ IT ตรวจรับ', returned: 'คืนแล้ว', rejected: 'ไม่อนุมัติ', need_info: 'รอข้อมูลเพิ่ม' };
+    const workflowTypeLabels = { checkout: 'เบิก', replacement: 'เปลี่ยนอุปกรณ์', resignation: 'ลาออก' };
     const movementRows = assetRequests.map(request => [
       request.id,
       request.requester || '',
       request.department || '',
+      workflowTypeLabels[request.workflow_type] || 'เบิก',
       request.item_type || '',
       request.device_serial || request.assigned_asset_sn || '',
       request.purpose || '',
@@ -4511,9 +4524,19 @@ function Dashboard({ currentUser, onLogout }) {
       request.notes || ''
     ]);
     const movementWs = XLSX.utils.aoa_to_sheet([movementHeaders, ...movementRows]);
-    movementWs['!cols'] = movementHeaders.map((header, index) => ({ wch: index === 13 ? 35 : Math.max(header.length + 4, 16) }));
-    movementWs['!autofilter'] = { ref: `A1:N${Math.max(movementRows.length + 1, 1)}` };
+    movementWs['!cols'] = movementHeaders.map((header, index) => ({ wch: index === 14 ? 35 : Math.max(header.length + 4, 16) }));
+    movementWs['!autofilter'] = { ref: `A1:O${Math.max(movementRows.length + 1, 1)}` };
     XLSX.utils.book_append_sheet(wb, movementWs, 'พนักงานเบิก-คืนอุปกรณ์');
+
+    const appendWorkflowSheet = (name, rows) => {
+      const sheet = XLSX.utils.aoa_to_sheet([movementHeaders, ...rows]);
+      sheet['!cols'] = movementHeaders.map((header, index) => ({ wch: index === 14 ? 35 : Math.max(header.length + 4, 16) }));
+      sheet['!autofilter'] = { ref: `A1:O${Math.max(rows.length + 1, 1)}` };
+      XLSX.utils.book_append_sheet(wb, sheet, name);
+    };
+    appendWorkflowSheet('Checklist พนักงานเข้า-ออก', movementRows);
+    appendWorkflowSheet('Asset Return', movementRows.filter((_, index) => ['return_requested', 'returned'].includes(assetRequests[index]?.status)));
+    appendWorkflowSheet('Incident', movementRows.filter((_, index) => assetRequests[index]?.workflow_type === 'replacement' || ['ชำรุด', 'สูญหาย'].includes(assetRequests[index]?.return_condition)));
 
     // Sheet 9: Company account usage derived from the software/license register
     const accountHeaders = ['รหัสเดือน', 'ระบบ/โปรแกรม', 'บัญชี/อีเมลที่สมัคร', 'Owner', 'ผู้ใช้งานปัจจุบัน', 'License ใช้งาน', 'License ว่าง', 'สถานะ', 'วันหมดสัญญา'];
@@ -5350,6 +5373,15 @@ function Dashboard({ currentUser, onLogout }) {
               {pendingAssetReturnCount}
             </span>
           </button>
+          <button onClick={() => { setOperationsLogView('checklist'); setMobileSidebarOpen(false); setActiveModal('operationsLog'); }} className="sidebar-btn">
+            Checklist พนักงานเข้า-ออก
+          </button>
+          <button onClick={() => { setOperationsLogView('returns'); setMobileSidebarOpen(false); setActiveModal('operationsLog'); }} className="sidebar-btn">
+            Asset Return
+          </button>
+          <button onClick={() => { setOperationsLogView('incidents'); setMobileSidebarOpen(false); setActiveModal('operationsLog'); }} className="sidebar-btn">
+            Incident
+          </button>
           </>}
         </div>
 
@@ -6045,6 +6077,46 @@ function Dashboard({ currentUser, onLogout }) {
         </div>
       )}
 
+      {activeModal === 'operationsLog' && (() => {
+        const workflowLabels = { checkout: 'เบิก', replacement: 'เปลี่ยนอุปกรณ์', resignation: 'ลาออก' };
+        const statusLabels = { pending: 'รออนุมัติ', approved: 'อนุมัติแล้ว', issued: 'ส่งมอบแล้ว', overdue: 'เกินกำหนด', return_requested: 'รอ IT ตรวจรับ', returned: 'คืนแล้ว', rejected: 'ไม่อนุมัติ', need_info: 'รอข้อมูลเพิ่ม' };
+        const checklistRows = assetRequests;
+        const returnRows = assetRequests.filter(request => ['return_requested', 'returned'].includes(request.status));
+        const incidentRows = assetRequests.filter(request => request.workflow_type === 'replacement' || ['ชำรุด', 'สูญหาย'].includes(request.return_condition));
+        const rows = operationsLogView === 'returns' ? returnRows : operationsLogView === 'incidents' ? incidentRows : checklistRows;
+        return (
+          <div className="modal-overlay active">
+            <div className="modal large dashboard-fullscreen-modal asset-workflow-modal">
+              <header className="modal-header">
+                <div><h3>Checklist / Asset Return / Incident</h3><p className="workflow-subtitle">ข้อมูลนับจากรายการเบิกและคืนอุปกรณ์ในระบบ</p></div>
+                <button onClick={() => setActiveModal(null)} className="modal-close"><X size={20} /></button>
+              </header>
+              <div className="modal-body">
+                <div className="return-view-switch" style={{ marginBottom: '16px' }}>
+                  <button className={operationsLogView === 'checklist' ? 'active' : ''} onClick={() => setOperationsLogView('checklist')}>Checklist ({checklistRows.length})</button>
+                  <button className={operationsLogView === 'returns' ? 'active' : ''} onClick={() => setOperationsLogView('returns')}>Asset Return ({returnRows.length})</button>
+                  <button className={operationsLogView === 'incidents' ? 'active' : ''} onClick={() => setOperationsLogView('incidents')}>Incident ({incidentRows.length})</button>
+                </div>
+                <div className="workflow-table-wrap">
+                  <table className="details-table workflow-table">
+                    <thead><tr><th>เลขที่</th><th>พนักงาน/แผนก</th><th>ประเภท</th><th>อุปกรณ์</th><th>วันที่เบิก</th><th>วันที่คืน</th><th>สภาพคืน</th><th>สถานะ</th><th>หมายเหตุ</th></tr></thead>
+                    <tbody>{rows.length === 0 ? <tr><td colSpan="9" className="workflow-empty">ไม่มีรายการ</td></tr> : rows.map(request => (
+                      <tr key={request.id}>
+                        <td>#{request.id}</td><td><strong>{request.requester}</strong><small>{request.department}</small></td>
+                        <td>{workflowLabels[request.workflow_type] || 'เบิก'}</td><td>{request.device_serial || request.item_type || '-'}</td>
+                        <td>{request.issue_date ? String(request.issue_date).slice(0, 10) : request.requested_date ? String(request.requested_date).slice(0, 10) : '-'}</td>
+                        <td>{request.return_date ? String(request.return_date).slice(0, 10) : '-'}</td><td>{request.return_condition || '-'}</td>
+                        <td>{statusLabels[request.status] || request.status}</td><td>{request.notes || '-'}</td>
+                      </tr>
+                    ))}</tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {activeModal === 'assetWorkflow' && (() => {
         const statusLabels = {
           pending: 'รออนุมัติ', approved: 'อนุมัติแล้ว', rejected: 'ไม่อนุมัติ',
@@ -6083,6 +6155,14 @@ function Dashboard({ currentUser, onLogout }) {
                     <label>แผนก <input required value={assetRequestForm.department} onChange={e => setAssetRequestForm(p => ({ ...p, department: e.target.value }))} /></label>
                     <label>หมายเลขเครื่อง / ประเภทอุปกรณ์ <textarea required rows="2" placeholder="เช่น iPad-006, iPad-007" value={assetRequestForm.itemType} onChange={e => setAssetRequestForm(p => ({ ...p, itemType: e.target.value }))} /></label>
                     <label>วันที่เบิก <input required type="date" value={assetRequestForm.requestedDate} onChange={e => setAssetRequestForm(p => ({ ...p, requestedDate: e.target.value }))} /></label>
+                    <label>ประเภทการดำเนินการ
+                      <select required value={assetRequestForm.workflowType} onChange={e => setAssetRequestForm(p => ({ ...p, workflowType: e.target.value }))}>
+                        <option value="">-- เลือกทุกครั้ง --</option>
+                        <option value="checkout">เบิก</option>
+                        <option value="replacement">เปลี่ยนอุปกรณ์</option>
+                        <option value="resignation">ลาออก</option>
+                      </select>
+                    </label>
                     <label className="workflow-span-2">เหตุผลการใช้งาน <textarea required value={assetRequestForm.purpose} onChange={e => setAssetRequestForm(p => ({ ...p, purpose: e.target.value }))} /></label>
                     <label className="workflow-span-2">หมายเหตุ <input value={assetRequestForm.notes} onChange={e => setAssetRequestForm(p => ({ ...p, notes: e.target.value }))} /></label>
                   </div>

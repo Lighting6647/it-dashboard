@@ -624,6 +624,7 @@ async function initDb() {
           issue_date TIMESTAMPTZ,
           return_date TIMESTAMPTZ,
           return_condition VARCHAR(50),
+          workflow_type VARCHAR(50) NOT NULL DEFAULT 'checkout',
           notes TEXT,
           history JSONB NOT NULL DEFAULT '[]'::jsonb,
           created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -674,6 +675,7 @@ async function initDb() {
         WHERE r.status IN ('approved', 'issued', 'overdue', 'return_requested')
           AND NOT EXISTS (SELECT 1 FROM assets a WHERE a.sn = r.assigned_asset_sn)
       `);
+      await client.query(`ALTER TABLE asset_requests ADD COLUMN IF NOT EXISTS workflow_type VARCHAR(50) NOT NULL DEFAULT 'checkout'`);
 
       await normalizeVacantAssetOwnership(client);
 
@@ -1155,8 +1157,9 @@ app.get('/api/asset-requests', async (_req, res) => {
 });
 
 app.post('/api/asset-requests', requireRole('admin'), async (req, res) => {
-  const { requester, department, itemType, purpose, requestedDate, dueDate, notes } = req.body;
-  if (!requester || !department || !itemType || !purpose || !requestedDate) {
+  const { requester, department, itemType, purpose, requestedDate, dueDate, notes, workflowType } = req.body;
+  const normalizedWorkflowType = ['checkout', 'replacement', 'resignation'].includes(workflowType) ? workflowType : '';
+  if (!requester || !department || !itemType || !purpose || !requestedDate || !normalizedWorkflowType) {
     return res.status(400).json({ error: 'กรุณากรอกข้อมูลคำขอให้ครบ' });
   }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(requestedDate)) {
@@ -1185,10 +1188,10 @@ app.post('/api/asset-requests', requireRole('admin'), async (req, res) => {
         note: requestedItems.length > 1 ? `ส่งคำขอเบิกแบบหลายเครื่อง (${requestedItems.length} รายการ)` : 'ส่งคำขอเบิกอุปกรณ์'
       };
       const result = await client.query(`
-        INSERT INTO asset_requests (requester, department, item_type, purpose, requested_date, due_date, notes, history)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        INSERT INTO asset_requests (requester, department, item_type, purpose, requested_date, due_date, notes, workflow_type, history)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         RETURNING *
-      `, [requester, department, item, purpose, requestedDate, dueDate || null, notes || '', JSON.stringify([event])]);
+      `, [requester, department, item, purpose, requestedDate, dueDate || null, notes || '', normalizedWorkflowType, JSON.stringify([event])]);
       created.push(result.rows[0]);
     }
     await client.query('COMMIT');
@@ -1306,7 +1309,8 @@ app.patch('/api/asset-requests/:id', requireRole('admin'), async (req, res) => {
 
 app.patch('/api/asset-requests/:id/action', requireRole('admin'), async (req, res) => {
   const id = Number(req.params.id);
-  const { action, reviewer, assetSn, condition, note, requesterIdentity } = req.body;
+  const { action, reviewer, assetSn, condition, note, requesterIdentity, workflowType } = req.body;
+  const normalizedWorkflowType = ['checkout', 'replacement', 'resignation'].includes(workflowType) ? workflowType : null;
   const allowedActions = ['approve', 'reject', 'issue', 'request_return', 'return'];
   if (!Number.isInteger(id) || !allowedActions.includes(action)) {
     return res.status(400).json({ error: 'คำสั่งไม่ถูกต้อง' });
@@ -1448,10 +1452,11 @@ app.patch('/api/asset-requests/:id/action', requireRole('admin'), async (req, re
           return_condition = CASE WHEN $1::text = 'returned' THEN $4::text ELSE return_condition END,
           notes = CASE WHEN $5 <> '' THEN CONCAT_WS(E'\n', NULLIF(notes, ''), $5) ELSE notes END,
           history = history || $6::jsonb,
+          workflow_type = COALESCE($8, workflow_type),
           updated_at = NOW()
       WHERE id = $7
       RETURNING *
-    `, [nextStatus, assignedSn, reviewer || null, condition || null, note || '', JSON.stringify([event]), id]);
+    `, [nextStatus, assignedSn, reviewer || null, condition || null, note || '', JSON.stringify([event]), id, normalizedWorkflowType]);
     await refreshOperationalCounters(client);
     await client.query('COMMIT');
     res.json(updated.rows[0]);
