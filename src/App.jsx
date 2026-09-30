@@ -4415,8 +4415,116 @@ function Dashboard({ currentUser, onLogout }) {
   };
 
   // Export current data to .xlsx
-  const exportToXlsx = () => {
-    const wb = XLSX.utils.book_new();
+  const exportToXlsx = async () => {
+    let wb;
+    try {
+      const templateResponse = await fetch('/weekly-it-data-report-new.xlsx', { cache: 'no-store' });
+      if (!templateResponse.ok) throw new Error(`Template ${templateResponse.status}`);
+      wb = XLSX.read(await templateResponse.arrayBuffer(), { type: 'array', cellStyles: true });
+    } catch (error) {
+      console.error('Unable to load weekly export template:', error);
+      alert('ไม่สามารถโหลดแม่แบบ Weekly IT Report ได้');
+      return;
+    }
+
+    const writeTemplateCell = (sheetName, address, value) => {
+      const sheet = wb.Sheets[sheetName];
+      if (!sheet) return;
+      const current = sheet[address] || {};
+      const type = typeof value === 'number' ? 'n' : 's';
+      sheet[address] = { ...current, t: type, v: value ?? '' };
+      delete sheet[address].f;
+    };
+    const checkedDate = new Date().toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' });
+    const returnRowsForReport = assetRequests.filter(request => ['return_requested', 'returned'].includes(request.status));
+    const incidentRowsForReport = assetRequests.filter(request => request.workflow_type === 'replacement' || ['ชำรุด', 'สูญหาย'].includes(request.return_condition));
+    const brokenAssetsForReport = assetsList.filter(asset => ['รอซ่อม', 'ชำรุด'].includes(normalizeAssetStatus(asset.status)));
+    const workflowSummary = `Checklist ${assetRequests.length} รายการ; Asset Return ${returnRowsForReport.length} รายการ; Incident ${incidentRowsForReport.length} รายการ`;
+
+    writeTemplateCell('สรุป', 'A4', `ข้อมูลตรวจสอบ ณ ${checkedDate}`);
+    writeTemplateCell('สรุป', 'A7', 4);
+    writeTemplateCell('สรุป', 'C7', 3);
+    writeTemplateCell('สรุป', 'E7', 1);
+    writeTemplateCell('สรุป', 'B11', `Dashboard พร้อมใช้งาน; ทรัพย์สิน ${warehouseTotalCount} เครื่อง; ${workflowSummary}`);
+    writeTemplateCell('สรุป', 'B12', `โครงการกำลังดำเนินการ ${(activeData.ongoingProjects || []).filter(project => project.status !== 'เสร็จสิ้น').length} รายการ; โปรแกรมใกล้หมดสัญญา ${activeData.softwareExpiring || 0} โปรแกรม`);
+    writeTemplateCell('สรุป', 'B13', `อุปกรณ์ชำรุด ${warehouseBrokenCount} เครื่อง; สูญหาย ${warehouseLostCount} เครื่อง; รายการรอตรวจรับ ${pendingAssetReturnCount}`);
+    writeTemplateCell('สรุป', 'B17', `Dashboard และ Device Monitor เปิดใช้งานได้ ข้อมูลรายงานเดือน ${activeData.monthName}`);
+    writeTemplateCell('สรุป', 'B18', `อุปกรณ์ ${monitoredTotal} เครื่อง: Active ${monitoredActive}; ใกล้ครบกำหนด ${monitoredWarning}; ยังไม่ยืนยัน ${monitoredUnverified}`);
+    writeTemplateCell('สรุป', 'B19', `ทรัพย์สิน ${warehouseTotalCount} เครื่อง: ว่าง ${vacantStockCount}; ชำรุด ${warehouseBrokenCount}; สูญหาย ${warehouseLostCount}`);
+    writeTemplateCell('สรุป', 'B20', `Software ${activeData.totalSoftware || 0} โปรแกรม; ค่าใช้จ่ายรายเดือน ${formatThaiBaht(activeData.softwareCost || 0)}`);
+    writeTemplateCell('สรุป', 'B21', `${workflowSummary}; Vendor Contract ${(activeData.vendorContracts || []).length} สัญญา`);
+
+    writeTemplateCell('ระบบและทรัพย์สิน', 'C6', `Dashboard แสดงอุปกรณ์ ${warehouseTotalCount} เครื่อง: ว่าง ${vacantStockCount}; ชำรุด ${warehouseBrokenCount}; สูญหาย ${warehouseLostCount}`);
+    writeTemplateCell('ระบบและทรัพย์สิน', 'C7', `${monitoredTotal} อุปกรณ์; Active ${monitoredActive}; ใกล้ครบกำหนด ${monitoredWarning}; ยังไม่ยืนยัน ${monitoredUnverified}`);
+    writeTemplateCell('ระบบและทรัพย์สิน', 'B13', monitoredTotal);
+    writeTemplateCell('ระบบและทรัพย์สิน', 'C13', `Active ${monitoredActive}; ใกล้ครบกำหนด ${monitoredWarning}; ยังไม่ยืนยัน ${monitoredUnverified}`);
+    writeTemplateCell('ระบบและทรัพย์สิน', 'B14', warehouseTotalCount);
+    writeTemplateCell('ระบบและทรัพย์สิน', 'C14', `ว่าง ${vacantStockCount}; ชำรุด ${warehouseBrokenCount}; สูญหาย ${warehouseLostCount}`);
+    writeTemplateCell('ระบบและทรัพย์สิน', 'B15', `ชำรุด ${warehouseBrokenCount}; สูญหาย ${warehouseLostCount}`);
+    writeTemplateCell('ระบบและทรัพย์สิน', 'C15', `รอตรวจรับ ${pendingAssetReturnCount}; Incident ${incidentRowsForReport.length}; รายการชำรุด ${brokenAssetsForReport.length}`);
+    writeTemplateCell('ระบบและทรัพย์สิน', 'B26', brokenAssetsForReport.length);
+    writeTemplateCell('ระบบและทรัพย์สิน', 'C26', `พบอุปกรณ์ชำรุด/รอซ่อม ${brokenAssetsForReport.length} รายการ`);
+    writeTemplateCell('ระบบและทรัพย์สิน', 'B29', warehouseLostCount);
+    writeTemplateCell('ระบบและทรัพย์สิน', 'C29', `Dashboard แสดงยอดสูญหาย ${warehouseLostCount} เครื่อง`);
+
+    writeTemplateCell('ข้อมูลที่ยังขาด', 'B7', workflowSummary);
+    writeTemplateCell('ข้อมูลที่ยังขาด', 'C7', pendingAssetReturnCount ? `ยังมี ${pendingAssetReturnCount} รายการรอ IT ตรวจรับ` : 'ข้อมูลเบิก-คืนครบตาม Workflow ปัจจุบัน');
+    writeTemplateCell('ข้อมูลที่ยังขาด', 'B8', `บัญชีบริษัท ${(activeData.softwareExpiringDetails || []).length} รายการ`);
+    writeTemplateCell('ข้อมูลที่ยังขาด', 'B9', `Vendor Contract ${(activeData.vendorContracts || []).length} สัญญา`);
+
+    const projectRowsForReport = activeData.ongoingProjects || [];
+    const openProjectRowsForReport = projectRowsForReport.filter(project => project.status !== 'เสร็จสิ้น');
+    const expiringSoftwareCount = Number(activeData.softwareExpiring || 0);
+    const securityIncidentCount = Number(activeData.securityIncidents || 0);
+    const riskRows = [
+      [`อุปกรณ์ใกล้ครบกำหนด ${monitoredWarning} เครื่อง`, 'ต้องตรวจสอบสถานะอุปกรณ์ตามรอบ', monitoredWarning ? 'ต้องติดตาม' : 'ปกติ', monitoredWarning ? 'ตรวจสอบและยืนยันสถานะอุปกรณ์' : 'ไม่มีงานค้าง', 'ผู้ดูแล IT'],
+      [`อุปกรณ์ยังไม่ยืนยัน ${monitoredUnverified} เครื่อง`, 'ข้อมูลผู้ถือครองอาจไม่ครบ', monitoredUnverified ? 'ต้องติดตาม' : 'ปกติ', monitoredUnverified ? 'ยืนยันผู้ใช้งานและสถานะอุปกรณ์' : 'ไม่มีงานค้าง', 'ผู้ดูแล IT'],
+      [`Asset Return รอตรวจรับ ${pendingAssetReturnCount} รายการ`, 'อุปกรณ์อาจยังไม่พร้อมเบิกต่อ', pendingAssetReturnCount ? 'ต้องติดตาม' : 'ปกติ', pendingAssetReturnCount ? 'ตรวจรับและปิดรายการคืน' : 'ไม่มีงานค้าง', 'ผู้ดูแล IT'],
+      [`อุปกรณ์ชำรุด ${warehouseBrokenCount} / สูญหาย ${warehouseLostCount} เครื่อง`, 'กระทบความพร้อมใช้งานและมูลค่าทรัพย์สิน', warehouseBrokenCount || warehouseLostCount ? 'ต้องติดตาม' : 'ปกติ', 'ตรวจสอบผู้รับผิดชอบ แผนซ่อม/ทดแทน และกำหนดเสร็จ', 'ผู้ดูแล IT'],
+      [`Software ใกล้หมดสัญญา ${expiringSoftwareCount}; Security Incident ${securityIncidentCount}`, 'เสี่ยงต่อความต่อเนื่องของบริการและความปลอดภัย', expiringSoftwareCount || securityIncidentCount ? 'ต้องติดตาม' : 'ปกติ', expiringSoftwareCount ? 'ต่ออายุหรือยืนยันการยกเลิกโปรแกรม' : 'ติดตามตามรอบ', 'ผู้ดูแล IT']
+    ];
+    riskRows.forEach((values, index) => {
+      const row = 6 + index;
+      ['A', 'B', 'C', 'D', 'E'].forEach((column, columnIndex) => writeTemplateCell('ความเสี่ยง', `${column}${row}`, values[columnIndex]));
+    });
+
+    const handoverRows = [
+      [`Dashboard มีข้อมูลทรัพย์สิน ${warehouseTotalCount} เครื่อง`, `${workflowSummary}; รอตรวจรับ ${pendingAssetReturnCount} รายการ`],
+      [`Device Monitor ติดตาม ${monitoredTotal} เครื่อง`, `ใกล้ครบกำหนด ${monitoredWarning}; ยังไม่ยืนยัน ${monitoredUnverified}`],
+      [`Software ${activeData.totalSoftware || 0} โปรแกรม และ Vendor ${(activeData.vendorContracts || []).length} สัญญา`, `โปรแกรมใกล้หมดสัญญา ${expiringSoftwareCount} รายการ`],
+      [`โครงการทั้งหมด ${projectRowsForReport.length} รายการ`, `โครงการที่ยังดำเนินการ ${openProjectRowsForReport.length} รายการ`]
+    ];
+    handoverRows.forEach((values, index) => {
+      const row = 6 + index;
+      writeTemplateCell('Handover', `A${row}`, values[0]);
+      writeTemplateCell('Handover', `B${row}`, values[1]);
+    });
+    writeTemplateCell('Handover', 'A12', `ข้อมูลจาก IT Monthly Dashboard ณ ${checkedDate}`);
+    writeTemplateCell('Handover', 'B12', 'ยอดรวมอ้างอิงข้อมูลในระบบ ณ เวลาที่กด Export');
+
+    writeTemplateCell('ข้อมูลใช้งานจริง', 'A4', `ข้อมูลจากระบบ ณ ${checkedDate} สรุปยอดรวมโดยไม่แสดงข้อมูลส่วนบุคคล`);
+    const usageValues = [
+      ['C7', activeData.ticketsCount || 0], ['C8', activeData.responseTime || 0], ['C9', activeData.csat || 0],
+      ['C10', warehouseTotalCount], ['C11', calculatedAssetValue], ['C12', activeData.totalSoftware || 0],
+      ['C13', activeData.softwareCost || 0], ['C14', activeData.securityIncidents || 0], ['C15', pendingAssetReturnCount],
+      ['C16', monitoredTotal], ['C17', monitoredActive], ['C18', monitoredWarning], ['C19', monitoredUnverified],
+      ['C20', externalDevices.filter(device => device.status === 'overdue').length]
+    ];
+    usageValues.forEach(([cell, value]) => writeTemplateCell('ข้อมูลใช้งานจริง', cell, Number(value || 0)));
+    writeTemplateCell('ข้อมูลใช้งานจริง', 'E10', `ว่าง ${vacantStockCount}; ชำรุด ${warehouseBrokenCount}; สูญหาย ${warehouseLostCount}`);
+    writeTemplateCell('ข้อมูลใช้งานจริง', 'E14', `Backup ${activeData.backupSuccess || 0}%; Antivirus ${activeData.antivirusCoverage || 0}%; MFA ${activeData.mfaCoverage || 0}%`);
+    writeTemplateCell('ข้อมูลใช้งานจริง', 'E15', `Checklist ${assetRequests.length}; Asset Return ${returnRowsForReport.length}; Incident ${incidentRowsForReport.length}`);
+    for (let row = 29; row <= 32; row += 1) {
+      ['A', 'B', 'C', 'D', 'E'].forEach(column => writeTemplateCell('ข้อมูลใช้งานจริง', `${column}${row}`, '-'));
+    }
+    brokenAssetsForReport.slice(0, 4).forEach((asset, index) => {
+      const row = 29 + index;
+      writeTemplateCell('ข้อมูลใช้งานจริง', `A${row}`, asset.itemType || '-');
+      writeTemplateCell('ข้อมูลใช้งานจริง', `B${row}`, asset.deviceSerial || '-');
+      writeTemplateCell('ข้อมูลใช้งานจริง', `C${row}`, asset.status || '-');
+      writeTemplateCell('ข้อมูลใช้งานจริง', `D${row}`, asset.notes || '-');
+      writeTemplateCell('ข้อมูลใช้งานจริง', `E${row}`, asset.respondent || 'ยังไม่ระบุผู้รับผิดชอบ/กำหนดเสร็จ');
+    });
 
     // Sheet 1: Dashboard metrics (one row per month)
     const dashHeaders = FIELD_MAP.map(f => f.header);
