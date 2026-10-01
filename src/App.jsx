@@ -1873,7 +1873,7 @@ const normalizeAssetLookup = (value, convertThaiKeyboard = false) => {
 function Dashboard({ currentUser, onLogout }) {
   const navigate = useNavigate();
   const isAdmin = currentUser?.role === 'admin';
-  const canRequestService = isAdmin;
+  const canRequestService = ['admin', 'staff'].includes(currentUser?.role);
   const [data, setData] = useState(() => {
     const saved = localStorage.getItem('it_dashboard_data');
     if (!saved) return initialDashboardData;
@@ -6310,13 +6310,15 @@ function Dashboard({ currentUser, onLogout }) {
                               )}
                             </td>
                             <td>
-                              <button
-                                className="workflow-edit-btn"
-                                onClick={() => editAssetRequest(request)}
-                                disabled={assetRequestLoading}
-                              >
-                                Edit
-                              </button>
+                              {isAdmin ? (
+                                <button
+                                  className="workflow-edit-btn"
+                                  onClick={() => editAssetRequest(request)}
+                                  disabled={assetRequestLoading}
+                                >
+                                  Edit
+                                </button>
+                              ) : <span className="workflow-done">ดูข้อมูล</span>}
                             </td>
                           </tr>
                         ))}
@@ -8624,7 +8626,7 @@ export default function App() {
   if (!auth?.user) return <Login onLogin={setAuth} />;
 
   const dashboard = <Dashboard currentUser={auth.user} onLogout={logout} />;
-  const canRequestService = auth.user.role === 'admin';
+  const canRequestService = ['admin', 'staff'].includes(auth.user.role);
   return (
     <Routes>
       <Route path="/" element={dashboard} />
