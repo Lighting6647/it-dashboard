@@ -1338,7 +1338,7 @@ app.patch('/api/asset-requests/:id/action', requireRole('admin'), async (req, re
       assignedSn = Number(assetSn);
       const assetResult = await client.query('SELECT * FROM assets WHERE sn = $1 FOR UPDATE', [assignedSn]);
       if (assetResult.rowCount === 0) throw new Error('ไม่พบอุปกรณ์ที่เลือก');
-      if (assetResult.rows[0].status !== 'ว่าง') throw new Error('อุปกรณ์นี้ไม่ว่างหรือถูกจองแล้ว');
+      if (normalizeAssetStatus(assetResult.rows[0].status) !== 'ว่าง') throw new Error('อุปกรณ์นี้ไม่ว่างหรือถูกจองแล้ว');
       nextStatus = 'approved';
       assetStatus = 'จอง';
     } else if (action === 'reject') {

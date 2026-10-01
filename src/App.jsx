@@ -2201,13 +2201,12 @@ function Dashboard({ currentUser, onLogout }) {
   const runAssetRequestAction = async (request, action) => {
     const payload = { action };
     if (action === 'approve') {
-      const vacantAssets = assetsList.filter(asset => normalizeAssetStatus(asset.status) === 'ว่าง');
+      const vacantAssets = assetsList
+        .filter(asset => normalizeAssetStatus(asset.status) === 'ว่าง')
+        .sort((left, right) => Number(left.sn || 0) - Number(right.sn || 0));
       if (vacantAssets.length === 0) return alert('ไม่มีอุปกรณ์สถานะว่างสำหรับอนุมัติ');
-      const choices = vacantAssets.slice(0, 30).map(asset => `${asset.sn}: ${asset.itemType} (${asset.deviceSerial})`).join('\n');
-      const remainingMessage = vacantAssets.length > 30
-        ? `\n...และอีก ${vacantAssets.length - 30} เครื่อง สามารถพิมพ์ Serial ได้โดยตรง`
-        : '';
-      const selected = window.prompt(`กรอกลำดับหรือ Serial อุปกรณ์ที่ต้องการจอง\nเช่น 29 หรือ iPhone-004 (รองรับกรณีคีย์บอร์ดไทย)\n\n${choices}${remainingMessage}`);
+      const choices = vacantAssets.map(asset => `${asset.sn}: ${asset.itemType} (${asset.deviceSerial})`).join('\n');
+      const selected = window.prompt(`กรอกลำดับหรือ Serial อุปกรณ์ที่ต้องการจอง (${vacantAssets.length} เครื่อง)\nเช่น 29 หรือ iPhone-004 (รองรับกรณีคีย์บอร์ดไทย)\n\n${choices}`);
       if (selected === null) return;
       const lookupTerms = new Set([
         normalizeAssetLookup(selected),
