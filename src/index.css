@@ -1087,6 +1087,121 @@ body {
     max-width: 800px;
 }
 
+.asset-picker-overlay {
+    z-index: 220;
+}
+
+.asset-picker-modal {
+    width: min(760px, calc(100vw - 24px));
+    max-width: 760px;
+    max-height: calc(100vh - 32px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.asset-picker-body {
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 0;
+}
+
+.asset-picker-summary {
+    color: var(--text-muted);
+}
+
+.asset-picker-summary strong {
+    color: #34d399;
+}
+
+.asset-picker-search,
+.asset-picker-reviewer input {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: #0b1224;
+    color: var(--text-primary);
+    padding: 11px 12px;
+}
+
+.asset-picker-list {
+    min-height: 220px;
+    max-height: 48vh;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.asset-picker-item {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: rgba(30, 41, 59, 0.72);
+    color: var(--text-primary);
+    text-align: left;
+    cursor: pointer;
+}
+
+.asset-picker-item:hover,
+.asset-picker-item.selected {
+    border-color: #3b82f6;
+    background: rgba(37, 99, 235, 0.22);
+}
+
+.asset-picker-item small {
+    display: block;
+    margin-top: 3px;
+    color: var(--text-muted);
+}
+
+.asset-picker-number {
+    color: #93c5fd;
+    font-weight: 700;
+}
+
+.asset-picker-status {
+    color: #34d399;
+    background: rgba(16, 185, 129, 0.14);
+    border-radius: 999px;
+    padding: 4px 9px;
+    font-size: 12px;
+}
+
+.asset-picker-empty {
+    padding: 32px 12px;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.asset-picker-reviewer {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    color: var(--text-muted);
+}
+
+.asset-picker-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.asset-picker-actions button {
+    min-width: 120px;
+}
+
 .dashboard-fullscreen-modal {
     width: calc(100vw - 24px);
     max-width: none !important;

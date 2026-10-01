@@ -1897,6 +1897,10 @@ function Dashboard({ currentUser, onLogout }) {
   const [assetRequestForm, setAssetRequestForm] = useState({ requester: '', department: '', itemType: '', purpose: '', requestedDate: new Date().toISOString().slice(0, 10), notes: '', workflowType: '' });
   const [assetWorkflowRole, setAssetWorkflowRole] = useState('requester');
   const [assetRequesterSearch, setAssetRequesterSearch] = useState('');
+  const [assetApprovalPicker, setAssetApprovalPicker] = useState(null);
+  const [assetApprovalSearch, setAssetApprovalSearch] = useState('');
+  const [assetApprovalSelectedSn, setAssetApprovalSelectedSn] = useState('');
+  const [assetApprovalReviewer, setAssetApprovalReviewer] = useState('IT');
   const [assetReturnSearch, setAssetReturnSearch] = useState('');
   const [assetReturnIdentity, setAssetReturnIdentity] = useState('');
   const [assetReturnView, setAssetReturnView] = useState('returns');
@@ -2198,30 +2202,24 @@ function Dashboard({ currentUser, onLogout }) {
     }
   };
 
-  const runAssetRequestAction = async (request, action) => {
-    const payload = { action };
+  const runAssetRequestAction = async (request, action, presetPayload = null) => {
+    const payload = { action, ...(presetPayload || {}) };
     if (action === 'approve') {
       const vacantAssets = assetsList
         .filter(asset => normalizeAssetStatus(asset.status) === 'ว่าง')
         .sort((left, right) => Number(left.sn || 0) - Number(right.sn || 0));
       if (vacantAssets.length === 0) return alert('ไม่มีอุปกรณ์สถานะว่างสำหรับอนุมัติ');
-      const choices = vacantAssets.map(asset => `${asset.sn}: ${asset.itemType} (${asset.deviceSerial})`).join('\n');
-      const selected = window.prompt(`กรอกลำดับหรือ Serial อุปกรณ์ที่ต้องการจอง\nอุปกรณ์สถานะว่างพร้อมส่งมอบทั้งหมด ${vacantAssets.length} เครื่อง\nเช่น 29 หรือ iPhone-004 (รองรับกรณีคีย์บอร์ดไทย)\n\n${choices}`);
-      if (selected === null) return;
-      const lookupTerms = new Set([
-        normalizeAssetLookup(selected),
-        normalizeAssetLookup(selected, true),
-      ]);
-      const selectedAsset = assetsList.find((asset) => (
-        lookupTerms.has(normalizeAssetLookup(asset.sn)) ||
-        lookupTerms.has(normalizeAssetLookup(asset.deviceSerial))
-      ));
-      if (!selectedAsset) return alert('ไม่พบลำดับหรือ Serial นี้ในทะเบียนอุปกรณ์');
-      if (normalizeAssetStatus(selectedAsset.status) !== 'ว่าง') {
-        return alert(`พบ ${selectedAsset.deviceSerial || selectedAsset.sn} แต่สถานะปัจจุบันคือ “${selectedAsset.status}” ยังไม่พร้อมจอง`);
+      if (!presetPayload?.assetSn) {
+        setAssetApprovalPicker(request);
+        setAssetApprovalSearch('');
+        setAssetApprovalSelectedSn('');
+        setAssetApprovalReviewer('IT');
+        return;
       }
+      const selectedAsset = vacantAssets.find(asset => Number(asset.sn) === Number(presetPayload.assetSn));
+      if (!selectedAsset) return alert('อุปกรณ์ที่เลือกไม่อยู่ในสถานะว่างแล้ว กรุณาเลือกใหม่');
       payload.assetSn = Number(selectedAsset.sn);
-      payload.reviewer = window.prompt('ชื่อผู้อนุมัติ / เจ้าหน้าที่ IT') || 'IT';
+      payload.reviewer = String(presetPayload.reviewer || 'IT').trim() || 'IT';
     } else if (action === 'reject') {
       const note = window.prompt('ระบุเหตุผลที่ไม่อนุมัติ');
       if (note === null) return;
@@ -2265,6 +2263,7 @@ function Dashboard({ currentUser, onLogout }) {
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'ดำเนินการไม่สำเร็จ');
       await Promise.all([loadAssetRequests(), refreshOperationalStateFromDb()]);
+      if (action === 'approve') setAssetApprovalPicker(null);
       if (action === 'request_return') alert('แจ้งขอคืนอุปกรณ์สำเร็จ กรุณานำอุปกรณ์ให้เจ้าหน้าที่ IT ตรวจรับ');
       if (action === 'return') alert('IT ตรวจรับอุปกรณ์และอัปเดตสถานะคลังสำเร็จ');
     } catch (err) {
@@ -6325,6 +6324,74 @@ function Dashboard({ currentUser, onLogout }) {
                     </table>
                   </div>
                 </section>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {assetApprovalPicker && (() => {
+        const search = normalizeAssetLookup(assetApprovalSearch);
+        const vacantAssets = assetsList
+          .filter(asset => normalizeAssetStatus(asset.status) === 'ว่าง')
+          .sort((left, right) => Number(left.sn || 0) - Number(right.sn || 0));
+        const filteredAssets = vacantAssets.filter(asset => !search || [
+          asset.sn,
+          asset.itemType,
+          asset.deviceSerial,
+          asset.additionalEquipment,
+          asset.additionalSerial
+        ].some(value => normalizeAssetLookup(value).includes(search)));
+        const selectedAsset = vacantAssets.find(asset => Number(asset.sn) === Number(assetApprovalSelectedSn));
+        return (
+          <div className="modal-overlay active asset-picker-overlay">
+            <div className="modal asset-picker-modal">
+              <header className="modal-header">
+                <div>
+                  <h3>เลือกอุปกรณ์ว่างสำหรับส่งมอบ</h3>
+                  <p className="workflow-subtitle">คำขอ #{assetApprovalPicker.id} · {assetApprovalPicker.requester}</p>
+                </div>
+                <button onClick={() => setAssetApprovalPicker(null)} className="modal-close"><X size={20} /></button>
+              </header>
+              <div className="asset-picker-body">
+                <div className="asset-picker-summary">อุปกรณ์สถานะว่างทั้งหมด <strong>{vacantAssets.length}</strong> เครื่อง</div>
+                <input
+                  className="asset-picker-search"
+                  autoFocus
+                  placeholder="ค้นหาลำดับ ประเภท หรือ Serial..."
+                  value={assetApprovalSearch}
+                  onChange={event => setAssetApprovalSearch(event.target.value)}
+                />
+                <div className="asset-picker-list">
+                  {filteredAssets.length === 0 ? (
+                    <div className="asset-picker-empty">ไม่พบอุปกรณ์ว่างที่ตรงกับคำค้นหา</div>
+                  ) : filteredAssets.map(asset => (
+                    <button
+                      type="button"
+                      key={asset.sn}
+                      className={`asset-picker-item ${Number(assetApprovalSelectedSn) === Number(asset.sn) ? 'selected' : ''}`}
+                      onClick={() => setAssetApprovalSelectedSn(String(asset.sn))}
+                    >
+                      <span className="asset-picker-number">#{asset.sn}</span>
+                      <span><strong>{asset.itemType || 'ไม่ระบุประเภท'}</strong><small>{asset.deviceSerial || 'ไม่มี Serial'}</small></span>
+                      <span className="asset-picker-status">ว่าง</span>
+                    </button>
+                  ))}
+                </div>
+                <label className="asset-picker-reviewer">ชื่อผู้อนุมัติ / เจ้าหน้าที่ IT
+                  <input value={assetApprovalReviewer} onChange={event => setAssetApprovalReviewer(event.target.value)} />
+                </label>
+                <div className="asset-picker-actions">
+                  <button type="button" className="secondary" onClick={() => setAssetApprovalPicker(null)}>ยกเลิก</button>
+                  <button
+                    type="button"
+                    className="workflow-primary-btn"
+                    disabled={!selectedAsset || assetRequestLoading}
+                    onClick={() => runAssetRequestAction(assetApprovalPicker, 'approve', { assetSn: selectedAsset?.sn, reviewer: assetApprovalReviewer })}
+                  >
+                    {assetRequestLoading ? 'กำลังอนุมัติ...' : selectedAsset ? `เลือก ${selectedAsset.deviceSerial || `#${selectedAsset.sn}`}` : 'เลือกอุปกรณ์ก่อน'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
