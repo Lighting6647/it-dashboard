@@ -4425,6 +4425,12 @@ function Dashboard({ currentUser, onLogout }) {
       return;
     }
 
+    // This template tab contains narrative audit notes from the sample file,
+    // not operational data owned by this app. The app already exports each
+    // workflow to its corresponding detail sheet, so omit the duplicate tab.
+    delete wb.Sheets['ข้อมูลที่ยังขาด'];
+    wb.SheetNames = wb.SheetNames.filter(name => name !== 'ข้อมูลที่ยังขาด');
+
     const writeTemplateCell = (sheetName, address, value) => {
       const sheet = wb.Sheets[sheetName];
       if (!sheet) return;
@@ -4464,11 +4470,6 @@ function Dashboard({ currentUser, onLogout }) {
     writeTemplateCell('ระบบและทรัพย์สิน', 'C26', `พบอุปกรณ์ชำรุด/รอซ่อม ${brokenAssetsForReport.length} รายการ`);
     writeTemplateCell('ระบบและทรัพย์สิน', 'B29', warehouseLostCount);
     writeTemplateCell('ระบบและทรัพย์สิน', 'C29', `Dashboard แสดงยอดสูญหาย ${warehouseLostCount} เครื่อง`);
-
-    writeTemplateCell('ข้อมูลที่ยังขาด', 'B7', workflowSummary);
-    writeTemplateCell('ข้อมูลที่ยังขาด', 'C7', pendingAssetReturnCount ? `ยังมี ${pendingAssetReturnCount} รายการรอ IT ตรวจรับ` : 'ข้อมูลเบิก-คืนครบตาม Workflow ปัจจุบัน');
-    writeTemplateCell('ข้อมูลที่ยังขาด', 'B8', `บัญชีบริษัท ${(activeData.softwareExpiringDetails || []).length} รายการ`);
-    writeTemplateCell('ข้อมูลที่ยังขาด', 'B9', `Vendor Contract ${(activeData.vendorContracts || []).length} สัญญา`);
 
     const projectRowsForReport = activeData.ongoingProjects || [];
     const openProjectRowsForReport = projectRowsForReport.filter(project => project.status !== 'เสร็จสิ้น');
