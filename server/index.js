@@ -369,8 +369,22 @@ app.patch('/api/auth/users/:username', requireRole('admin'), asyncRoute(async (r
   res.json({ user: result.rows[0] });
 }));
 
-const dbUrl = process.env.DATABASE_URL || '';
-const isRenderInternal = dbUrl.includes('@dpg-') && !dbUrl.includes('.com');
+function normalizeDbUrl(rawUrl) {
+  if (!rawUrl) return '';
+  let url = String(rawUrl).trim();
+  const isShortRenderHost = /@dpg-[a-z0-9]+-a(?:[:\/\?#]|$)/i.test(url) && !url.includes('.');
+  const isRenderCloud = !!process.env.RENDER || !!process.env.RENDER_SERVICE_ID;
+
+  if (isShortRenderHost && !isRenderCloud) {
+    const region = process.env.RENDER_REGION || 'singapore';
+    url = url.replace(/@(dpg-[a-z0-9]+-a)([:\/\?#]|$)/i, `@$1.${region}-postgres.render.com$2`);
+  }
+  return url;
+}
+
+const rawDbUrl = process.env.DATABASE_URL || '';
+const dbUrl = normalizeDbUrl(rawDbUrl);
+const isRenderInternal = dbUrl.includes('@dpg-') && !dbUrl.includes('.');
 
 const pool = new pg.Pool({
   connectionString: dbUrl,
@@ -848,22 +862,7 @@ app.post('/api/tickets', requireRole('staff'), async (req, res) => {
   const monthKey = String(date).slice(0, 7);
   let client;
   try {
-    client = new pg.Client({
-      connectionString: dbUrl,
-      ssl: (dbUrl && !isRenderInternal) ? { rejectUnauthorized: false } : false
-    });
-    
-    let retries = 3;
-    while (retries > 0) {
-      try {
-        await client.connect();
-        break;
-      } catch (connErr) {
-        retries--;
-        if (retries === 0) throw connErr;
-        await new Promise(r => setTimeout(r, 1000));
-      }
-    }
+    client = await pool.connect();
 
     await client.query('BEGIN');
 
@@ -954,7 +953,7 @@ app.post('/api/tickets', requireRole('staff'), async (req, res) => {
     res.status(statusCode).json({ error: statusCode >= 500 ? 'สร้างใบแจ้งปัญหาไม่สำเร็จ' : err.message });
   } finally {
     if (client) {
-      try { await client.end(); } catch (closeError) { console.error('Failed to close database client:', closeError); }
+      try { client.release(); } catch (closeError) { console.error('Failed to close database client:', closeError); }
     }
   }
 });
