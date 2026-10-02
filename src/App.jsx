@@ -1920,6 +1920,10 @@ function Dashboard({ currentUser, onLogout }) {
   const [consoleSaveMessage, setConsoleSaveMessage] = useState('');
   const [consoleAssetSearch, setConsoleAssetSearch] = useState('');
   const [editingAssetTagField, setEditingAssetTagField] = useState(null);
+  const [lineNotifyTokenInput, setLineNotifyTokenInput] = useState('');
+  const [lineNotifyTestStatus, setLineNotifyTestStatus] = useState('');
+  const [lineNotifyTesting, setLineNotifyTesting] = useState(false);
+  const [qrSearchQuery, setQrSearchQuery] = useState('');
   const [editingAssetSn, setEditingAssetSn] = useState(null);
   const [editingTicketSn, setEditingTicketSn] = useState(null);
   const [editingSoftwareIndex, setEditingSoftwareIndex] = useState(null);
@@ -5280,6 +5284,33 @@ function Dashboard({ currentUser, onLogout }) {
   };
 
   // Sync state data with form inputs when opening the edit modal
+  
+  const handleTestLineNotify = async () => {
+    if (!lineNotifyTokenInput.trim()) {
+      setLineNotifyTestStatus('กรุณากรอก LINE Notify Token ก่อนทดสอบ');
+      return;
+    }
+    setLineNotifyTesting(true);
+    setLineNotifyTestStatus('');
+    try {
+      const response = await authFetch(`${API_BASE}/api/test-line-notify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: lineNotifyTokenInput.trim() })
+      });
+      const result = await response.json().catch(() => ({}));
+      if (response.ok) {
+        setLineNotifyTestStatus('✅ ' + (result.message || 'ส่งข้อความเข้า LINE Notify สำเร็จ!'));
+      } else {
+        setLineNotifyTestStatus('❌ ' + (result.error || 'ส่งไม่สำเร็จ'));
+      }
+    } catch (err) {
+      setLineNotifyTestStatus('❌ เกิดข้อผิดพลาด: ' + err.message);
+    } finally {
+      setLineNotifyTesting(false);
+    }
+  };
+
   const openEditModal = () => {
     setFormInputs({
       // Assets
@@ -8317,6 +8348,40 @@ function Dashboard({ currentUser, onLogout }) {
                         <input type="file" accept=".json" onChange={handleImportJson} style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)' }} />
                       </div>
 
+                      
+                      <div className="console-card" style={{ border: '1px solid rgba(16, 185, 129, 0.3)', backgroundColor: 'rgba(16, 185, 129, 0.04)' }}>
+                        <h5 style={{ margin: '0 0 8px 0', color: '#10b981', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          🔔 ตั้งค่าและทดสอบ LINE Notify (การแจ้งเตือนงานซ่อมและเบิกอุปกรณ์)
+                        </h5>
+                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0 0 12px 0' }}>
+                          กรอก LINE Notify Token เพื่อส่งข้อความแจ้งเตือนอัตโนมัติเข้ากลุ่ม LINE ของทีม IT เมื่อมีคนแจ้ง Ticket ใหม่ หรือขอเบิกอุปกรณ์
+                        </p>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                          <input
+                            type="password"
+                            value={lineNotifyTokenInput}
+                            onChange={(e) => setLineNotifyTokenInput(e.target.value)}
+                            placeholder="วาง LINE Notify Token ที่นี่"
+                            className="console-input"
+                            style={{ flex: 1, minWidth: '220px' }}
+                          />
+                          <button
+                            type="button"
+                            onClick={handleTestLineNotify}
+                            disabled={lineNotifyTesting}
+                            className="sidebar-btn"
+                            style={{ width: 'auto', padding: '8px 16px', backgroundColor: '#10b981', border: 'none', color: 'white' }}
+                          >
+                            {lineNotifyTesting ? 'กำลังทดสอบ...' : '🚀 ทดสอบส่งข้อความ LINE'}
+                          </button>
+                        </div>
+                        {lineNotifyTestStatus && (
+                          <div style={{ marginTop: '8px', fontSize: '0.85rem', fontWeight: 'bold' }}>
+                            {lineNotifyTestStatus}
+                          </div>
+                        )}
+                      </div>
+
                       <div className="console-card" style={{ border: '1px solid rgba(239, 68, 68, 0.2)', backgroundColor: 'rgba(239, 68, 68, 0.03)' }}>
                         <h5 style={{ margin: '0 0 8px 0', color: 'rgb(239, 68, 68)' }}>⚠️ รีเซ็ตระบบใหม่ทั้งหมด (Wipe Database)</h5>
                         <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0 0 12px 0' }}>
@@ -8342,6 +8407,215 @@ function Dashboard({ currentUser, onLogout }) {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      );
+    })()}
+
+
+    {/* MODAL 9: MONTHLY PDF EXECUTIVE SUMMARY REPORT */}
+    {activeModal === 'pdfReport' && (
+      <div className="modal-overlay active pdf-report-overlay">
+        <div className="modal large" style={{ width: '100%', maxWidth: '1050px', background: 'transparent', boxShadow: 'none' }}>
+          <header className="modal-header no-print" style={{ background: '#0f172a', padding: '12px 20px', borderRadius: '12px 12px 0 0' }}>
+            <h3 style={{ color: 'white', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              📄 รายงานสรุปผลการดำเนินงานด้านไอทีประจำเดือน ({activeData.monthName})
+            </h3>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                onClick={() => window.print()}
+                className="sidebar-btn"
+                style={{ width: 'auto', padding: '8px 16px', backgroundColor: '#0284c7', border: 'none', color: 'white' }}
+              >
+                <Printer size={16} /> พิมพ์ / บันทึกเป็น PDF
+              </button>
+              <button onClick={() => setActiveModal(null)} className="modal-close"><X size={20} /></button>
+            </div>
+          </header>
+          <div className="modal-body" style={{ background: '#f8fafc', padding: '0', borderRadius: '0 0 12px 12px', overflowY: 'auto', maxHeight: '85vh' }}>
+            <div className="pdf-executive-report">
+              <div className="pdf-report-header">
+                <div className="pdf-logo-group">
+                  <img src={fernAesthetiqueLogo} alt="FERN AESTHETIQUE" className="pdf-logo" />
+                  <div>
+                    <h2>FERN AESTHETIQUE · IT OPERATIONS</h2>
+                    <p>รายงานสรุปผลการดำเนินงานด้านเทคโนโลยีสารสนเทศและงบประมาณ</p>
+                  </div>
+                </div>
+                <div className="pdf-report-meta">
+                  <div><strong>ประจำเดือน:</strong> {activeData.monthName}</div>
+                  <div><strong>วันที่ออกรายงาน:</strong> {new Date().toLocaleDateString('th-TH')}</div>
+                  <div><strong>ระดับความปลอดภัย:</strong> ปกติ (Security Score: {securityScore}%)</div>
+                </div>
+              </div>
+
+              <div className="pdf-section">
+                <h3 className="pdf-section-title">1. สรุปตัวชี้วัดผลการดำเนินงานหลัก (Executive KPIs)</h3>
+                <div className="pdf-kpi-grid">
+                  <div className="pdf-kpi-box">
+                    <span className="pdf-kpi-label">ทรัพย์สิน IT ในระบบ</span>
+                    <strong className="pdf-kpi-value">{activeData.totalAssets} เครื่อง</strong>
+                    <small>มูลค่ารวม {formatThaiBaht(activeData.assetValue)}</small>
+                  </div>
+                  <div className="pdf-kpi-box">
+                    <span className="pdf-kpi-label">งานบริการ Support</span>
+                    <strong className="pdf-kpi-value">{activeData.ticketsCount} ใบงาน</strong>
+                    <small>SLA {activeData.slaPercent}% · ตอบกลับ {activeData.responseTime} นาที</small>
+                  </div>
+                  <div className="pdf-kpi-box">
+                    <span className="pdf-kpi-label">ค่าใช้จ่ายซ่อมบำรุงรวม</span>
+                    <strong className="pdf-kpi-value">{formatThaiBaht(totalRepairExpense)}</strong>
+                    <small>จากงานซ่อม {ticketsWithCost.length} รายการ</small>
+                  </div>
+                  <div className="pdf-kpi-box">
+                    <span className="pdf-kpi-label">อุปกรณ์พร้อมใช้ / ชำรุด</span>
+                    <strong className="pdf-kpi-value">{activeData.assetsVacant} / {activeData.assetsBroken} เครื่อง</strong>
+                    <small>ใกล้หมดอายุ {activeData.assetsExpiring} เครื่อง</small>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pdf-section">
+                <h3 className="pdf-section-title">2. รายละเอียดงบประมาณและค่าใช้จ่ายซ่อมแซม (IT Repair Expense Analytics)</h3>
+                <table className="pdf-table">
+                  <thead>
+                    <tr>
+                      <th>รหัส Ticket</th>
+                      <th>วัน-เวลา</th>
+                      <th>ผู้แจ้ง / แผนก</th>
+                      <th>อาการเสีย / รายการ</th>
+                      <th>ผู้รับผิดชอบ</th>
+                      <th>สถานะ</th>
+                      <th style={{ textAlign: 'right' }}>ค่าใช้จ่าย (บาท)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ticketsWithCost.length > 0 ? (
+                      ticketsWithCost.map((ticket, idx) => (
+                        <tr key={idx}>
+                          <td><strong>#{ticket.sn}</strong></td>
+                          <td>{ticket.date}</td>
+                          <td>{ticket.complainant}</td>
+                          <td>{ticket.issue}</td>
+                          <td>{ticket.responder}</td>
+                          <td>{ticket.status}</td>
+                          <td style={{ textAlign: 'right' }}><strong>{formatThaiBaht(ticket.cost)}</strong></td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr><td colSpan="7" style={{ textAlign: 'center', color: '#64748b' }}>ไม่มีรายการค่าใช้จ่ายซ่อมแซมในเดือนนี้</td></tr>
+                    )}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td colSpan="6" style={{ textAlign: 'right' }}><strong>รวมค่าใช้จ่ายซ่อมบำรุงประจำเดือนทั้งสิ้น:</strong></td>
+                      <td style={{ textAlign: 'right' }}><strong style={{ color: '#059669', fontSize: '1.05rem' }}>{formatThaiBaht(totalRepairExpense)}</strong></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+
+              <div className="pdf-section">
+                <h3 className="pdf-section-title">3. ข้อเสนอแนะและแผนงานปรับปรุง (IT Recommendations)</h3>
+                <ul className="pdf-list">
+                  {activeData.recommendations && activeData.recommendations.length > 0 ? (
+                    activeData.recommendations.map((rec, idx) => <li key={idx}>{rec}</li>)
+                  ) : (
+                    <li>ระบบทำงานอยู่ในเกณฑ์ปกติ ไม่มีข้อเสนอแนะเพิ่มเติมสำหรับเดือนนี้</li>
+                  )}
+                </ul>
+              </div>
+
+              <div className="pdf-signatures">
+                <div className="pdf-sig-box">
+                  <div className="pdf-sig-line"></div>
+                  <strong>(_________________________)</strong>
+                  <span>ผู้จัดทำรายงาน (IT Manager)</span>
+                  <small>วันที่ ____/____/________</small>
+                </div>
+                <div className="pdf-sig-box">
+                  <div className="pdf-sig-line"></div>
+                  <strong>(_________________________)</strong>
+                  <span>ผู้อนุมัติรายงาน (Managing Director / Executive)</span>
+                  <small>วันที่ ____/____/________</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* MODAL 10: ASSET QR CODE TAG PRINTING SHEET */}
+    {activeModal === 'qrPrint' && (() => {
+      const filteredAssets = assetsList.filter(asset => {
+        const query = qrSearchQuery.toLowerCase();
+        return !query || 
+          String(asset.sn).includes(query) ||
+          (asset.user || '').toLowerCase().includes(query) ||
+          (asset.itemType || '').toLowerCase().includes(query) ||
+          (asset.deviceSerial || '').toLowerCase().includes(query) ||
+          (asset.position || '').toLowerCase().includes(query);
+      });
+
+      return (
+        <div className="modal-overlay active qr-print-overlay">
+          <div className="modal large" style={{ width: '100%', maxWidth: '1100px' }}>
+            <header className="modal-header no-print">
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                🖨️ พิมพ์สติกเกอร์ QR Code ติดอุปกรณ์ IT ({filteredAssets.length} เครื่อง)
+              </h3>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <input
+                  type="text"
+                  placeholder="ค้นหาอุปกรณ์ / ชื่อผู้เบิก / Serial..."
+                  value={qrSearchQuery}
+                  onChange={(e) => setQrSearchQuery(e.target.value)}
+                  className="console-input"
+                  style={{ width: '220px', padding: '6px 12px' }}
+                />
+                <button
+                  onClick={() => window.print()}
+                  className="sidebar-btn"
+                  style={{ width: 'auto', padding: '8px 16px', backgroundColor: '#0d9488', border: 'none', color: 'white' }}
+                >
+                  <Printer size={16} /> สั่งพิมพ์สติกเกอร์ (Print Labels)
+                </button>
+                <button onClick={() => setActiveModal(null)} className="modal-close"><X size={20} /></button>
+              </div>
+            </header>
+            <div className="modal-body" style={{ maxHeight: '82vh', overflowY: 'auto', background: '#0b1329' }}>
+              <div className="qr-tag-sheet-grid">
+                {filteredAssets.length > 0 ? (
+                  filteredAssets.map((asset) => {
+                    const qrTargetUrl = `${window.location.origin}/#/form?assetSn=${asset.sn}&serial=${encodeURIComponent(asset.deviceSerial || '')}`;
+                    const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(qrTargetUrl)}`;
+                    return (
+                      <div className="qr-asset-tag-card" key={asset.sn}>
+                        <div className="qr-tag-header">
+                          <span className="qr-brand-title">FERN AESTHETIQUE · IT TAG</span>
+                          <span className="qr-tag-code">#{asset.sn}</span>
+                        </div>
+                        <div className="qr-tag-body">
+                          <img src={qrImgUrl} alt={`QR ${asset.sn}`} className="qr-code-img" />
+                          <div className="qr-tag-info">
+                            <strong className="qr-device-serial">{asset.deviceSerial || `TAG-${asset.sn}`}</strong>
+                            <span className="qr-item-type">{asset.itemType}</span>
+                            <span className="qr-user-name">👤 {asset.user || 'สำรอง'} ({asset.position || '-'})</span>
+                            <span className="qr-status-badge">สถานะ: {asset.status || 'ใช้งาน'}</span>
+                          </div>
+                        </div>
+                        <div className="qr-tag-footer">📱 สแกน QR เพื่อแจ้งซ่อม / เบิกคืนอุปกรณ์</div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div style={{ gridColumn: '1 / -1', padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                    ไม่พบรายการอุปกรณ์ที่ตรงตามเงื่อนไข
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       );

@@ -149,6 +149,28 @@ async function requireAuth(req, res, next) {
   }
 }
 
+
+async function sendLineNotify(message) {
+  const token = process.env.LINE_NOTIFY_TOKEN;
+  if (!token) return false;
+  try {
+    const params = new URLSearchParams();
+    params.append('message', message);
+    const response = await fetch('https://notify-api.line.me/api/notify', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': `Bearer ${token}`
+      },
+      body: params
+    });
+    return response.ok;
+  } catch (err) {
+    console.error('LINE Notify Error:', err.message);
+    return false;
+  }
+}
+
 function requireRole(minimumRole) {
   return (req, res, next) => {
     if (!req.user || ROLE_LEVEL[req.user.role] < ROLE_LEVEL[minimumRole]) {
@@ -680,6 +702,14 @@ async function initDb() {
       await normalizeVacantAssetOwnership(client);
 
       await refreshOperationalCounters(client);
+    sendLineNotify(
+      `\n🚨 [แจ้งปัญหา IT ใหม่ #${nextSn}]\n` +
+      `👤 ผู้แจ้ง: ${complainant}\n` +
+      `💻 อุปกรณ์: ${deviceType} ${assetSerial ? `(${assetSerial})` : ''}\n` +
+      `⚠️ อาการ: ${issue}\n` +
+      `🎯 ความสำคัญ: ${priority || 'medium'}\n` +
+      `📅 วันที่: ${date}`
+    ).catch(() => {});
       console.log('Tables initialized successfully.');
     } finally {
       client.release();
@@ -903,6 +933,16 @@ app.post('/api/tickets', requireRole('staff'), async (req, res) => {
     await refreshOperationalCounters(client);
 
     await client.query('COMMIT');
+    if (typeof ticket !== 'undefined') {
+      sendLineNotify(
+        `\n✅ [ปิดใบงาน IT #${sn}]\n` +
+        `👤 ผู้แจ้ง: ${ticket.complainant || '-'}\n` +
+        `🛠️ ผู้ดำเนินการ: ${responder}\n` +
+        `⏱️ เวลาที่ใช้: ${duration || '-'}\n` +
+        `💰 ค่าใช้จ่าย: ${Number(cost || 0) > 0 ? Number(cost).toLocaleString() + ' บาท' : 'ไม่มี'}\n` +
+        `📌 สถานะ: ${status}`
+      ).catch(() => {});
+    }
     res.status(201).json({ success: true, sn: nextSn, monthKey, linkedAssetSn });
   } catch (err) {
     if (client) {
@@ -1793,4 +1833,30 @@ initDb().then(() => {
   app.listen(PORT, () => {
     console.log(`Backend Server is running on port ${PORT}`);
   });
+});
+
+app.post('/api/test-line-notify', requireRole('admin'), async (req, res) => {
+  const token = req.body?.token || process.env.LINE_NOTIFY_TOKEN;
+  if (!token) {
+    return res.status(400).json({ error: 'ไม่พบ LINE Notify Token (กรุณาระบุ Token ในการทดสอบ)' });
+  }
+  try {
+    const params = new URLSearchParams();
+    params.append('message', '\n🔔 [ทดสอบการเชื่อมต่อ LINE Notify]\nระบบ FERN AESTHETIQUE IT Operations เชื่อมต่อสำเร็จ!');
+    const response = await fetch('https://notify-api.line.me/api/notify', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': `Bearer ${token}`
+      },
+      body: params
+    });
+    if (response.ok) {
+      return res.json({ success: true, message: 'ส่งข้อความทดสอบเข้า LINE Notify สำเร็จ' });
+    }
+    const data = await response.json().catch(() => ({}));
+    return res.status(400).json({ error: data.message || 'ส่งข้อความไม่สำเร็จ Token อาจไม่ถูกต้อง' });
+  } catch (err) {
+    return res.status(500).json({ error: 'เกิดข้อผิดพลาดในการเชื่อมต่อ LINE Notify: ' + err.message });
+  }
 });

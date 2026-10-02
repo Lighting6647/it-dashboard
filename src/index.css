@@ -4360,3 +4360,274 @@ html, body, #root {
         font-size: 10px;
     }
 }
+
+/* ============================================================
+   FEATURES 1-4: Executive PDF Report, QR Stickers, Expense Analytics
+   ============================================================ */
+
+/* Executive PDF Report Modal */
+.pdf-report-overlay {
+    z-index: 2800 !important;
+}
+.pdf-executive-report {
+    background: #ffffff;
+    color: #1e293b;
+    padding: 32px;
+    border-radius: 12px;
+    max-width: 1000px;
+    margin: 0 auto;
+    font-family: system-ui, -apple-system, sans-serif;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+}
+.pdf-report-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #0284c7;
+    margin-bottom: 24px;
+}
+.pdf-logo-group {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+.pdf-logo {
+    width: 120px;
+    height: auto;
+    border-radius: 8px;
+}
+.pdf-logo-group h2 {
+    margin: 0;
+    font-size: 1.4rem;
+    color: #0f172a;
+    font-weight: 800;
+}
+.pdf-logo-group p {
+    margin: 4px 0 0;
+    color: #64748b;
+    font-size: 0.88rem;
+}
+.pdf-report-meta {
+    text-align: right;
+    font-size: 0.85rem;
+    color: #334155;
+    display: grid;
+    gap: 4px;
+}
+.pdf-section {
+    margin-bottom: 28px;
+}
+.pdf-section-title {
+    font-size: 1.05rem;
+    color: #0369a1;
+    border-bottom: 1.5px solid #e2e8f0;
+    padding-bottom: 6px;
+    margin-bottom: 14px;
+    font-weight: 700;
+}
+.pdf-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+.pdf-kpi-box {
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.pdf-kpi-label {
+    font-size: 0.75rem;
+    color: #64748b;
+    font-weight: 600;
+}
+.pdf-kpi-value {
+    font-size: 1.25rem;
+    color: #0f172a;
+    font-weight: 800;
+}
+.pdf-kpi-box small {
+    font-size: 0.72rem;
+    color: #475569;
+}
+.pdf-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+.pdf-table th, .pdf-table td {
+    padding: 8px 12px;
+    border: 1px solid #cbd5e1;
+    text-align: left;
+}
+.pdf-table th {
+    background: #f1f5f9;
+    color: #0f172a;
+    font-weight: 700;
+}
+.pdf-table tfoot tr {
+    background: #f8fafc;
+}
+.pdf-list {
+    margin: 0;
+    padding-left: 20px;
+    display: grid;
+    gap: 6px;
+    font-size: 0.9rem;
+    color: #334155;
+}
+.pdf-signatures {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 40px;
+    padding-top: 24px;
+    border-top: 1px dashed #cbd5e1;
+}
+.pdf-sig-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    min-width: 220px;
+}
+.pdf-sig-line {
+    width: 180px;
+    height: 1px;
+    background: #94a3b8;
+    margin-bottom: 30px;
+}
+.pdf-sig-box strong { font-size: 0.85rem; color: #334155; }
+.pdf-sig-box span { font-size: 0.8rem; color: #64748b; }
+.pdf-sig-box small { font-size: 0.75rem; color: #94a3b8; }
+
+/* QR Code Asset Tagging Sheet */
+.qr-tag-sheet-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+    padding: 16px;
+}
+.qr-asset-tag-card {
+    background: #ffffff;
+    color: #0f172a;
+    border: 2px solid #0284c7;
+    border-radius: 10px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    page-break-inside: avoid;
+}
+.qr-tag-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1.5px solid #e2e8f0;
+    padding-bottom: 4px;
+}
+.qr-brand-title {
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: #0369a1;
+    letter-spacing: 0.05em;
+}
+.qr-tag-code {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+.qr-tag-body {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+.qr-code-img {
+    width: 72px;
+    height: 72px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 2px;
+    background: #fff;
+}
+.qr-tag-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 0.75rem;
+    min-width: 0;
+    flex: 1;
+}
+.qr-device-serial {
+    font-weight: 800;
+    font-size: 0.85rem;
+    color: #0f172a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.qr-item-type {
+    color: #0284c7;
+    font-weight: 600;
+    font-size: 0.72rem;
+}
+.qr-user-name {
+    color: #475569;
+    font-size: 0.7rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.qr-tag-footer {
+    font-size: 0.62rem;
+    text-align: center;
+    color: #64748b;
+    border-top: 1px dashed #cbd5e1;
+    padding-top: 4px;
+}
+
+/* Print Media Stylesheet for PDF Report & QR Tag Sheet */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    .pdf-report-overlay,
+    .pdf-report-overlay *,
+    .qr-print-overlay,
+    .qr-print-overlay * {
+        visibility: visible;
+    }
+    .pdf-report-overlay,
+    .qr-print-overlay {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100% !important;
+        height: auto !important;
+        background: #ffffff !important;
+        backdrop-filter: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    .pdf-executive-report {
+        box-shadow: none !important;
+        padding: 0 !important;
+        max-width: 100% !important;
+    }
+    .modal-header,
+    .no-print,
+    .modal-close,
+    .btn-save,
+    .sidebar-btn {
+        display: none !important;
+    }
+    .qr-tag-sheet-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 12px !important;
+        padding: 0 !important;
+    }
+}
