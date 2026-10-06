@@ -5521,13 +5521,13 @@ function Dashboard({ currentUser, onLogout }) {
             Incident
           </button>
           </>}
-          <button onClick={() => { setMobileSidebarOpen(false); setActiveModal('pdfReport'); }} className="sidebar-btn" style={{ backgroundColor: '#2563eb', border: 'none', color: 'white', fontWeight: '600' }}>
+          <button onClick={() => { setMobileSidebarOpen(false); setActiveModal('pdfReport'); }} className="sidebar-btn pdf-report-menu-btn">
             <FileSpreadsheet size={16} />
-            📄 สรุปรายงาน PDF
+            <span>สรุปรายงาน PDF</span>
           </button>
-          <button onClick={() => { setMobileSidebarOpen(false); setActiveModal('qrPrint'); }} className="sidebar-btn" style={{ backgroundColor: '#7c3aed', border: 'none', color: 'white', fontWeight: '600' }}>
+          <button onClick={() => { setMobileSidebarOpen(false); setActiveModal('qrPrint'); }} className="sidebar-btn qr-print-menu-btn">
             <Printer size={16} />
-            🖨️ พิมพ์ QR Code ติดเครื่อง
+            <span>พิมพ์ QR Code ติดเครื่อง</span>
           </button>
         </div>
 
@@ -5675,19 +5675,17 @@ function Dashboard({ currentUser, onLogout }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <button 
                 onClick={() => { setMobileSidebarOpen(false); setActiveModal('pdfReport'); }} 
-                className="sidebar-btn" 
-                style={{ backgroundColor: '#2563eb', border: 'none', color: 'white', fontWeight: 'bold' }}
+                className="sidebar-btn pdf-report-menu-btn"
               >
                 <FileSpreadsheet size={16} />
-                📄 สรุปรายงาน PDF (Executive Report)
+                <span>สรุปรายงาน PDF (Executive Report)</span>
               </button>
               <button 
                 onClick={() => { setMobileSidebarOpen(false); setActiveModal('qrPrint'); }} 
-                className="sidebar-btn" 
-                style={{ backgroundColor: '#7c3aed', border: 'none', color: 'white', fontWeight: 'bold' }}
+                className="sidebar-btn qr-print-menu-btn"
               >
                 <Printer size={16} />
-                🖨️ พิมพ์ QR Code ติดเครื่อง (A4 Tags)
+                <span>พิมพ์ QR Code ติดเครื่อง (A4 Tags)</span>
               </button>
               <button onClick={() => window.print()} className="sidebar-btn secondary">
                 <Printer size={16} />
