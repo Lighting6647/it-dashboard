@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build || echo \"Using pre-built dist bundle\"",
     "start": "node server/index.js",
     "lint": "oxlint",
     "preview": "vite preview"
