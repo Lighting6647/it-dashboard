@@ -5521,6 +5521,14 @@ function Dashboard({ currentUser, onLogout }) {
             Incident
           </button>
           </>}
+          <button onClick={() => { setMobileSidebarOpen(false); setActiveModal('pdfReport'); }} className="sidebar-btn" style={{ backgroundColor: '#2563eb', border: 'none', color: 'white', fontWeight: '600' }}>
+            <FileSpreadsheet size={16} />
+            📄 สรุปรายงาน PDF
+          </button>
+          <button onClick={() => { setMobileSidebarOpen(false); setActiveModal('qrPrint'); }} className="sidebar-btn" style={{ backgroundColor: '#7c3aed', border: 'none', color: 'white', fontWeight: '600' }}>
+            <Printer size={16} />
+            🖨️ พิมพ์ QR Code ติดเครื่อง
+          </button>
         </div>
 
         {/* Month Dropdown Selection */}
@@ -5660,14 +5668,30 @@ function Dashboard({ currentUser, onLogout }) {
             onClick={() => setSidebarExpanded(prev => ({ ...prev, export: !prev.export }))}
             style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.05)', marginBottom: '8px' }}
           >
-            <label className="control-label" style={{ margin: 0, cursor: 'pointer' }}>📄 ส่งออกเอกสาร</label>
+            <label className="control-label" style={{ margin: 0, cursor: 'pointer' }}>📄 รายงาน PDF & QR Code</label>
             {sidebarExpanded.export ? <ChevronDown size={14} style={{ color: 'var(--text-muted)' }} /> : <ChevronRight size={14} style={{ color: 'var(--text-muted)' }} />}
           </div>
           {sidebarExpanded.export && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <button 
+                onClick={() => { setMobileSidebarOpen(false); setActiveModal('pdfReport'); }} 
+                className="sidebar-btn" 
+                style={{ backgroundColor: '#2563eb', border: 'none', color: 'white', fontWeight: 'bold' }}
+              >
+                <FileSpreadsheet size={16} />
+                📄 สรุปรายงาน PDF (Executive Report)
+              </button>
+              <button 
+                onClick={() => { setMobileSidebarOpen(false); setActiveModal('qrPrint'); }} 
+                className="sidebar-btn" 
+                style={{ backgroundColor: '#7c3aed', border: 'none', color: 'white', fontWeight: 'bold' }}
+              >
+                <Printer size={16} />
+                🖨️ พิมพ์ QR Code ติดเครื่อง (A4 Tags)
+              </button>
               <button onClick={() => window.print()} className="sidebar-btn secondary">
                 <Printer size={16} />
-                บันทึกเป็น PDF / พิมพ์
+                บันทึกเป็น PDF หน้าปัจจุบัน / พิมพ์
               </button>
             </div>
           )}
