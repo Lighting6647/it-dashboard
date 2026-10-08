@@ -8583,23 +8583,23 @@ function Dashboard({ currentUser, onLogout }) {
       return (
         <div className="modal-overlay active qr-print-overlay">
           <div className="modal large" style={{ width: '100%', maxWidth: '1100px' }}>
-            <header className="modal-header no-print">
+            <header className="modal-header no-print qr-tag-modal-header">
               <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 🖨️ พิมพ์สติกเกอร์ QR Code ติดอุปกรณ์ IT ({filteredAssets.length} เครื่อง)
               </h3>
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <div className="qr-tag-header-actions" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                 <input
                   type="text"
                   placeholder="ค้นหาอุปกรณ์ / ชื่อผู้เบิก / Serial..."
                   value={qrSearchQuery}
                   onChange={(e) => setQrSearchQuery(e.target.value)}
-                  className="console-input"
-                  style={{ width: '220px', padding: '6px 12px' }}
+                  className="console-input qr-search-input"
+                  style={{ padding: '6px 12px' }}
                 />
                 <button
                   onClick={() => window.print()}
-                  className="sidebar-btn"
-                  style={{ width: 'auto', padding: '8px 16px', backgroundColor: '#0d9488', border: 'none', color: 'white' }}
+                  className="sidebar-btn qr-print-btn"
+                  style={{ padding: '8px 16px', backgroundColor: '#0d9488', border: 'none', color: 'white' }}
                 >
                   <Printer size={16} /> สั่งพิมพ์สติกเกอร์ (Print Labels)
                 </button>
