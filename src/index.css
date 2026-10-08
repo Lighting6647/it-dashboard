@@ -4890,23 +4890,45 @@ html, body, #root {
         text-align: center !important;
     }
 
-    /* 3. Vendor Contract Modal Form Grid & Inputs on Mobile (Fixes Screenshot 5) */
+    /* 3. Form Grids & Date Inputs on Mobile (Fixes Screenshot 5 & Projects Go-Live Modal) */
+    .form-grid,
     .vendor-contract-modal .form-grid,
-    .software-license-form .form-grid {
-        grid-template-columns: 1fr !important;
+    .software-license-form .form-grid,
+    .console-form,
+    .asset-registry-form {
+        grid-template-columns: minmax(0, 1fr) !important;
         gap: 10px !important;
         width: 100% !important;
+        max-width: 100% !important;
         box-sizing: border-box !important;
     }
 
-    .vendor-contract-modal .form-group,
-    .vendor-contract-modal input,
-    .vendor-contract-modal select,
-    .software-license-form input,
-    .software-license-form select {
+    .form-group,
+    .form-group.full-width,
+    .vendor-contract-modal .form-group {
+        grid-column: auto !important;
         width: 100% !important;
         max-width: 100% !important;
         min-width: 0 !important;
+        box-sizing: border-box !important;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea,
+    .form-group input[type="date"],
+    .vendor-contract-modal input,
+    .vendor-contract-modal select,
+    .software-license-form input,
+    .software-license-form select,
+    .software-license-form textarea,
+    .software-license-form input[type="date"],
+    input[type="date"] {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        inline-size: 100% !important;
+        min-inline-size: 0 !important;
         box-sizing: border-box !important;
     }
 
