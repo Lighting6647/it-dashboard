@@ -8436,137 +8436,145 @@ function Dashboard({ currentUser, onLogout }) {
 
 
     {/* MODAL 9: MONTHLY PDF EXECUTIVE SUMMARY REPORT */}
-    {activeModal === 'pdfReport' && (
-      <div className="modal-overlay active pdf-report-overlay">
-        <div className="modal large" style={{ width: '100%', maxWidth: '1050px', background: 'transparent', boxShadow: 'none' }}>
-          <header className="modal-header no-print" style={{ background: '#0f172a', padding: '12px 20px', borderRadius: '12px 12px 0 0' }}>
-            <h3 style={{ color: 'white', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-              📄 รายงานสรุปผลการดำเนินงานด้านไอทีประจำเดือน ({activeData.monthName})
-            </h3>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button
-                onClick={() => window.print()}
-                className="sidebar-btn"
-                style={{ width: 'auto', padding: '8px 16px', backgroundColor: '#0284c7', border: 'none', color: 'white' }}
-              >
-                <Printer size={16} /> พิมพ์ / บันทึกเป็น PDF
-              </button>
-              <button onClick={() => setActiveModal(null)} className="modal-close"><X size={20} /></button>
-            </div>
-          </header>
-          <div className="modal-body" style={{ background: '#f8fafc', padding: '0', borderRadius: '0 0 12px 12px', overflowY: 'auto', maxHeight: '85vh' }}>
-            <div className="pdf-executive-report">
-              <div className="pdf-report-header">
-                <div className="pdf-logo-group">
-                  <img src={fernAesthetiqueLogo} alt="FERN AESTHETIQUE" className="pdf-logo" />
-                  <div>
-                    <h2>FERN AESTHETIQUE · IT OPERATIONS</h2>
-                    <p>รายงานสรุปผลการดำเนินงานด้านเทคโนโลยีสารสนเทศและงบประมาณ</p>
-                  </div>
-                </div>
-                <div className="pdf-report-meta">
-                  <div><strong>ประจำเดือน:</strong> {activeData.monthName}</div>
-                  <div><strong>วันที่ออกรายงาน:</strong> {new Date().toLocaleDateString('th-TH')}</div>
-                  <div><strong>ระดับความปลอดภัย:</strong> ปกติ (Security Score: {securityScore}%)</div>
-                </div>
-              </div>
+    {activeModal === 'pdfReport' && (() => {
+      const tickets = activeData.ticketsList || data[currentMonth]?.ticketsList || [];
+      const ticketsWithCost = tickets.filter(ticket => Number(ticket.cost || ticket.repairCost || ticket.price || 0) > 0);
+      const totalRepairExpense = ticketsWithCost.reduce((sum, ticket) => sum + Number(ticket.cost || ticket.repairCost || ticket.price || 0), 0);
+      const securityIncidents = Number(activeData.securityIncidents || 0);
+      const securityScore = Math.max(70, 100 - (securityIncidents * 10));
 
-              <div className="pdf-section">
-                <h3 className="pdf-section-title">1. สรุปตัวชี้วัดผลการดำเนินงานหลัก (Executive KPIs)</h3>
-                <div className="pdf-kpi-grid">
-                  <div className="pdf-kpi-box">
-                    <span className="pdf-kpi-label">ทรัพย์สิน IT ในระบบ</span>
-                    <strong className="pdf-kpi-value">{activeData.totalAssets} เครื่อง</strong>
-                    <small>มูลค่ารวม {formatThaiBaht(activeData.assetValue)}</small>
+      return (
+        <div className="modal-overlay active pdf-report-overlay">
+          <div className="modal large" style={{ width: '100%', maxWidth: '1050px', background: 'transparent', boxShadow: 'none' }}>
+            <header className="modal-header no-print" style={{ background: '#0f172a', padding: '12px 20px', borderRadius: '12px 12px 0 0' }}>
+              <h3 style={{ color: 'white', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                📄 รายงานสรุปผลการดำเนินงานด้านไอทีประจำเดือน ({activeData.monthName})
+              </h3>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  onClick={() => window.print()}
+                  className="sidebar-btn"
+                  style={{ width: 'auto', padding: '8px 16px', backgroundColor: '#0284c7', border: 'none', color: 'white' }}
+                >
+                  <Printer size={16} /> พิมพ์ / บันทึกเป็น PDF
+                </button>
+                <button onClick={() => setActiveModal(null)} className="modal-close"><X size={20} /></button>
+              </div>
+            </header>
+            <div className="modal-body" style={{ background: '#f8fafc', padding: '0', borderRadius: '0 0 12px 12px', overflowY: 'auto', maxHeight: '85vh' }}>
+              <div className="pdf-executive-report">
+                <div className="pdf-report-header">
+                  <div className="pdf-logo-group">
+                    <img src={fernAesthetiqueLogo} alt="FERN AESTHETIQUE" className="pdf-logo" />
+                    <div>
+                      <h2>FERN AESTHETIQUE · IT OPERATIONS</h2>
+                      <p>รายงานสรุปผลการดำเนินงานด้านเทคโนโลยีสารสนเทศและงบประมาณ</p>
+                    </div>
                   </div>
-                  <div className="pdf-kpi-box">
-                    <span className="pdf-kpi-label">งานบริการ Support</span>
-                    <strong className="pdf-kpi-value">{activeData.ticketsCount} ใบงาน</strong>
-                    <small>SLA {activeData.slaPercent}% · ตอบกลับ {activeData.responseTime} นาที</small>
-                  </div>
-                  <div className="pdf-kpi-box">
-                    <span className="pdf-kpi-label">ค่าใช้จ่ายซ่อมบำรุงรวม</span>
-                    <strong className="pdf-kpi-value">{formatThaiBaht(totalRepairExpense)}</strong>
-                    <small>จากงานซ่อม {ticketsWithCost.length} รายการ</small>
-                  </div>
-                  <div className="pdf-kpi-box">
-                    <span className="pdf-kpi-label">อุปกรณ์พร้อมใช้ / ชำรุด</span>
-                    <strong className="pdf-kpi-value">{activeData.assetsVacant} / {activeData.assetsBroken} เครื่อง</strong>
-                    <small>ใกล้หมดอายุ {activeData.assetsExpiring} เครื่อง</small>
+                  <div className="pdf-report-meta">
+                    <div><strong>ประจำเดือน:</strong> {activeData.monthName}</div>
+                    <div><strong>วันที่ออกรายงาน:</strong> {new Date().toLocaleDateString('th-TH')}</div>
+                    <div><strong>ระดับความปลอดภัย:</strong> ปกติ (Security Score: {securityScore}%)</div>
                   </div>
                 </div>
-              </div>
 
-              <div className="pdf-section">
-                <h3 className="pdf-section-title">2. รายละเอียดงบประมาณและค่าใช้จ่ายซ่อมแซม (IT Repair Expense Analytics)</h3>
-                <table className="pdf-table">
-                  <thead>
-                    <tr>
-                      <th>รหัส Ticket</th>
-                      <th>วัน-เวลา</th>
-                      <th>ผู้แจ้ง / แผนก</th>
-                      <th>อาการเสีย / รายการ</th>
-                      <th>ผู้รับผิดชอบ</th>
-                      <th>สถานะ</th>
-                      <th style={{ textAlign: 'right' }}>ค่าใช้จ่าย (บาท)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {ticketsWithCost.length > 0 ? (
-                      ticketsWithCost.map((ticket, idx) => (
-                        <tr key={idx}>
-                          <td><strong>#{ticket.sn}</strong></td>
-                          <td>{ticket.date}</td>
-                          <td>{ticket.complainant}</td>
-                          <td>{ticket.issue}</td>
-                          <td>{ticket.responder}</td>
-                          <td>{ticket.status}</td>
-                          <td style={{ textAlign: 'right' }}><strong>{formatThaiBaht(ticket.cost)}</strong></td>
-                        </tr>
-                      ))
+                <div className="pdf-section">
+                  <h3 className="pdf-section-title">1. สรุปตัวชี้วัดผลการดำเนินงานหลัก (Executive KPIs)</h3>
+                  <div className="pdf-kpi-grid">
+                    <div className="pdf-kpi-box">
+                      <span className="pdf-kpi-label">ทรัพย์สิน IT ในระบบ</span>
+                      <strong className="pdf-kpi-value">{activeData.totalAssets} เครื่อง</strong>
+                      <small>มูลค่ารวม {formatThaiBaht(activeData.assetValue)}</small>
+                    </div>
+                    <div className="pdf-kpi-box">
+                      <span className="pdf-kpi-label">งานบริการ Support</span>
+                      <strong className="pdf-kpi-value">{activeData.ticketsCount} ใบงาน</strong>
+                      <small>SLA {activeData.slaPercent}% · ตอบกลับ {activeData.responseTime} นาที</small>
+                    </div>
+                    <div className="pdf-kpi-box">
+                      <span className="pdf-kpi-label">ค่าใช้จ่ายซ่อมบำรุงรวม</span>
+                      <strong className="pdf-kpi-value">{formatThaiBaht(totalRepairExpense)}</strong>
+                      <small>จากงานซ่อม {ticketsWithCost.length} รายการ</small>
+                    </div>
+                    <div className="pdf-kpi-box">
+                      <span className="pdf-kpi-label">อุปกรณ์พร้อมใช้ / ชำรุด</span>
+                      <strong className="pdf-kpi-value">{activeData.assetsVacant} / {activeData.assetsBroken} เครื่อง</strong>
+                      <small>ใกล้หมดอายุ {activeData.assetsExpiring} เครื่อง</small>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pdf-section">
+                  <h3 className="pdf-section-title">2. รายละเอียดงบประมาณและค่าใช้จ่ายซ่อมแซม (IT Repair Expense Analytics)</h3>
+                  <table className="pdf-table">
+                    <thead>
+                      <tr>
+                        <th>รหัส Ticket</th>
+                        <th>วัน-เวลา</th>
+                        <th>ผู้แจ้ง / แผนก</th>
+                        <th>อาการเสีย / รายการ</th>
+                        <th>ผู้รับผิดชอบ</th>
+                        <th>สถานะ</th>
+                        <th style={{ textAlign: 'right' }}>ค่าใช้จ่าย (บาท)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {ticketsWithCost.length > 0 ? (
+                        ticketsWithCost.map((ticket, idx) => (
+                          <tr key={idx}>
+                            <td><strong>#{ticket.sn}</strong></td>
+                            <td>{ticket.date}</td>
+                            <td>{ticket.complainant}</td>
+                            <td>{ticket.issue}</td>
+                            <td>{ticket.responder}</td>
+                            <td>{ticket.status}</td>
+                            <td style={{ textAlign: 'right' }}><strong>{formatThaiBaht(ticket.cost || ticket.repairCost || ticket.price || 0)}</strong></td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr><td colSpan="7" style={{ textAlign: 'center', color: '#64748b' }}>ไม่มีรายการค่าใช้จ่ายซ่อมแซมในเดือนนี้</td></tr>
+                      )}
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <td colSpan="6" style={{ textAlign: 'right' }}><strong>รวมค่าใช้จ่ายซ่อมบำรุงประจำเดือนทั้งสิ้น:</strong></td>
+                        <td style={{ textAlign: 'right' }}><strong style={{ color: '#059669', fontSize: '1.05rem' }}>{formatThaiBaht(totalRepairExpense)}</strong></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+
+                <div className="pdf-section">
+                  <h3 className="pdf-section-title">3. ข้อเสนอแนะและแผนงานปรับปรุง (IT Recommendations)</h3>
+                  <ul className="pdf-list">
+                    {activeData.recommendations && activeData.recommendations.length > 0 ? (
+                      activeData.recommendations.map((rec, idx) => <li key={idx}>{rec}</li>)
                     ) : (
-                      <tr><td colSpan="7" style={{ textAlign: 'center', color: '#64748b' }}>ไม่มีรายการค่าใช้จ่ายซ่อมแซมในเดือนนี้</td></tr>
+                      <li>ระบบทำงานอยู่ในเกณฑ์ปกติ ไม่มีข้อเสนอแนะเพิ่มเติมสำหรับเดือนนี้</li>
                     )}
-                  </tbody>
-                  <tfoot>
-                    <tr>
-                      <td colSpan="6" style={{ textAlign: 'right' }}><strong>รวมค่าใช้จ่ายซ่อมบำรุงประจำเดือนทั้งสิ้น:</strong></td>
-                      <td style={{ textAlign: 'right' }}><strong style={{ color: '#059669', fontSize: '1.05rem' }}>{formatThaiBaht(totalRepairExpense)}</strong></td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-
-              <div className="pdf-section">
-                <h3 className="pdf-section-title">3. ข้อเสนอแนะและแผนงานปรับปรุง (IT Recommendations)</h3>
-                <ul className="pdf-list">
-                  {activeData.recommendations && activeData.recommendations.length > 0 ? (
-                    activeData.recommendations.map((rec, idx) => <li key={idx}>{rec}</li>)
-                  ) : (
-                    <li>ระบบทำงานอยู่ในเกณฑ์ปกติ ไม่มีข้อเสนอแนะเพิ่มเติมสำหรับเดือนนี้</li>
-                  )}
-                </ul>
-              </div>
-
-              <div className="pdf-signatures">
-                <div className="pdf-sig-box">
-                  <div className="pdf-sig-line"></div>
-                  <strong>(_________________________)</strong>
-                  <span>ผู้จัดทำรายงาน (IT Manager)</span>
-                  <small>วันที่ ____/____/________</small>
+                  </ul>
                 </div>
-                <div className="pdf-sig-box">
-                  <div className="pdf-sig-line"></div>
-                  <strong>(_________________________)</strong>
-                  <span>ผู้อนุมัติรายงาน (Managing Director / Executive)</span>
-                  <small>วันที่ ____/____/________</small>
+
+                <div className="pdf-signatures">
+                  <div className="pdf-sig-box">
+                    <div className="pdf-sig-line"></div>
+                    <strong>(_________________________)</strong>
+                    <span>ผู้จัดทำรายงาน (IT Manager)</span>
+                    <small>วันที่ ____/____/________</small>
+                  </div>
+                  <div className="pdf-sig-box">
+                    <div className="pdf-sig-line"></div>
+                    <strong>(_________________________)</strong>
+                    <span>ผู้อนุมัติรายงาน (Managing Director / Executive)</span>
+                    <small>วันที่ ____/____/________</small>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    )}
+      );
+    })()}
 
     {/* MODAL 10: ASSET QR CODE TAG PRINTING SHEET */}
     {activeModal === 'qrPrint' && (() => {
