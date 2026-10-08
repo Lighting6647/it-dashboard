@@ -92,3 +92,61 @@
     border-radius: 16px;
   }
 }
+
+/* === Demo Mode Button Styles === */
+.demo-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 16px 0 14px;
+}
+
+.demo-divider::before,
+.demo-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.demo-divider span {
+  padding: 0 10px;
+  color: rgba(226, 232, 255, 0.6);
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.demo-login-btn {
+  width: 100%;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  border-radius: 15px;
+  color: #e9d5ff;
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(99, 102, 241, 0.25));
+  box-shadow: 0 8px 24px rgba(147, 51, 234, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.demo-login-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.35), rgba(99, 102, 241, 0.4));
+  border-color: rgba(192, 132, 252, 0.7);
+  color: #ffffff;
+  box-shadow: 0 12px 30px rgba(147, 51, 234, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.demo-login-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.demo-login-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}

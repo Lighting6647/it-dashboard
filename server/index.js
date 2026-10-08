@@ -52,7 +52,8 @@ function loadAuthUsers() {
   return [
     { username: 'itadmin', name: 'ผู้ดูแล IT', role: 'admin', passwordHash: ADMIN_PASSWORD_HASH },
     { username: 'staff', name: 'ผู้ใช้งานทั่วไป', role: 'staff', passwordHash: hashPassword(process.env.STAFF_PASSWORD || 'staff2569') },
-    { username: 'viewer', name: 'ผู้ดูรายงาน', role: 'viewer', passwordHash: hashPassword(process.env.VIEWER_PASSWORD || 'viewer2569') }
+    { username: 'viewer', name: 'ผู้ดูรายงาน', role: 'viewer', passwordHash: hashPassword(process.env.VIEWER_PASSWORD || 'viewer2569') },
+    { username: 'demo_guest', name: 'ผู้เข้าชมเดโม (Demo Guest)', role: 'admin', passwordHash: hashPassword('demo') }
   ];
 }
 
@@ -297,6 +298,21 @@ app.post('/api/auth/login', async (req, res) => {
   }
   const publicUser = publicAuthUser(user);
   res.json({ token: signAuthToken(user), user: publicUser, expiresIn: AUTH_TOKEN_TTL_SECONDS });
+});
+
+app.post('/api/auth/demo', async (_req, res) => {
+  let demoUser = await findAuthUser('demo_guest');
+  if (!demoUser) {
+    demoUser = {
+      username: 'demo_guest',
+      name: 'ผู้เข้าชมเดโม (Demo Guest)',
+      role: 'admin',
+      active: true,
+      authVersion: 'default'
+    };
+  }
+  const publicUser = publicAuthUser(demoUser);
+  res.json({ token: signAuthToken(demoUser), user: publicUser, expiresIn: AUTH_TOKEN_TTL_SECONDS });
 });
 
 app.get('/api/auth/me', requireAuth, (req, res) => {

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import {
   Activity, Database, Eye, EyeOff, KeyRound, Laptop, LayoutDashboard,
-  LockKeyhole, ShieldCheck, TicketCheck, UserRound
+  LockKeyhole, ShieldCheck, Sparkles, TicketCheck, UserRound
 } from 'lucide-react';
 import fernLogo from '../assets/fern-aesthetique-logo.png';
 import { storeAuth } from '../auth';
@@ -69,6 +69,27 @@ export default function Login({ onLogin }) {
     finally { setLoading(false); }
   };
 
+  const handleDemoLogin = async () => {
+    setError(''); setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/auth/demo`, { method: 'POST' });
+      const result = await response.json().catch(() => ({}));
+      if (response.ok && result.token && result.user) {
+        const auth = { token: result.token, user: result.user };
+        storeAuth(auth); onLogin(auth);
+        return;
+      }
+    } catch {
+      // offline/fallback mode
+    }
+    const fallbackAuth = {
+      token: 'demo-token-guest',
+      user: { username: 'demo_guest', name: 'ผู้เข้าชมเดโม (Demo Guest)', role: 'admin', active: true }
+    };
+    storeAuth(fallbackAuth); onLogin(fallbackAuth);
+    setLoading(false);
+  };
+
   return (
     <main className="login-page" ref={pageRef}>
       <div className="login-scene" aria-hidden="true"><span className="login-orb login-orb-one" /><span className="login-orb login-orb-two" /><span className="login-liquid-line" /></div>
@@ -85,6 +106,18 @@ export default function Login({ onLogin }) {
             <label htmlFor="login-password">Password</label><div className="login-input-wrap"><KeyRound size={19} /><input id="login-password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="รหัสผ่าน" required /><button type="button" className="password-toggle" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน'}>{showPassword ? <EyeOff size={19} /> : <Eye size={19} />}</button></div>
             {error && <div className="login-error" role="alert">{error}</div>}<button className="login-submit" type="submit" disabled={loading}><span>{loading ? 'กำลังตรวจสอบ...' : 'เข้าสู่ระบบ'}</span></button>
           </form>
+
+          <div className="demo-divider"><span>หรือ</span></div>
+          <button
+            type="button"
+            className="demo-login-btn"
+            onClick={handleDemoLogin}
+            disabled={loading}
+          >
+            <Sparkles size={18} />
+            <span>เข้าชมระบบเวอร์ชัน Demo (ไม่ต้องใช้รหัสผ่าน)</span>
+          </button>
+
           <div className="login-access-note"><LockKeyhole size={14} /> สิทธิ์ 3 ระดับ: ผู้ดูรายงาน • ผู้ใช้งานทั่วไป • ผู้ดูแล IT</div>
         </section>
       </div>
