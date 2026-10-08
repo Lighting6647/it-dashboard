@@ -215,6 +215,8 @@ body {
     min-height: 100vh;
     display: flex;
     overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 #root {
@@ -2038,8 +2040,9 @@ body {
 
 @media (max-width: 1100px) {
     body.mobile-menu-open {
-        overflow: hidden;
-        touch-action: none;
+        overflow: auto;
+        overflow-y: auto;
+        touch-action: pan-y;
     }
 
     .mobile-menu-backdrop {
@@ -2843,7 +2846,7 @@ body {
 }
 
 /* Stable mobile interaction and full-screen modal behavior */
-body.modal-open { overflow: hidden; }
+body.modal-open { overflow: auto; overflow-y: auto; }
 
 @media (max-width: 767px) {
     .sidebar {
