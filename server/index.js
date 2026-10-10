@@ -238,6 +238,37 @@ function normalizeAssetStatus(value) {
   return status;
 }
 
+const IOS_DEVICE_MONITOR_BASE = process.env.IOS_DEVICE_MONITOR_BASE || 'https://ios-device-monitor-46w9.onrender.com';
+const IOS_DASHBOARD_SYNC_TOKEN = process.env.IOS_DASHBOARD_SYNC_TOKEN || '';
+
+async function syncIosDeviceAssignment({ action, deviceNumber, userName, position }) {
+  if (!deviceNumber) return { synced: false, skipped: 'missing-device-number' };
+  if (!IOS_DASHBOARD_SYNC_TOKEN) throw new Error('ยังไม่ได้ตั้งค่า IOS_DASHBOARD_SYNC_TOKEN สำหรับซิงค์ Device Monitor');
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+  try {
+    const response = await fetch(`${IOS_DEVICE_MONITOR_BASE}/api/integration/device-assignment`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-integration-token': IOS_DASHBOARD_SYNC_TOKEN
+      },
+      body: JSON.stringify({ action, deviceNumber, userName, position }),
+      signal: controller.signal
+    });
+    const result = await response.json().catch(() => ({}));
+    if (response.status === 404) return { synced: false, skipped: 'not-registered', deviceNumber };
+    if (!response.ok) throw new Error(result.error || `Device Monitor API ${response.status}`);
+    return { synced: true, ...result };
+  } catch (error) {
+    if (error.name === 'AbortError') throw new Error('Device Monitor ใช้เวลาตอบกลับนานเกินไป กรุณาลองใหม่');
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 let storedThaiRepairComplete = false;
 let storedThaiRepairPromise;
 async function ensureStoredThaiTextIsReadable(queryable) {
@@ -1450,6 +1481,21 @@ app.patch('/api/asset-requests/:id/action', requireRole('staff'), async (req, re
       }
     }
 
+    let iosDeviceSync = { synced: false, skipped: 'not-applicable' };
+    if (assignedSn && ['issue', 'return'].includes(action)) {
+      const syncAssetResult = await client.query(
+        'SELECT device_serial FROM assets WHERE sn = $1',
+        [assignedSn]
+      );
+      const deviceNumber = syncAssetResult.rows[0]?.device_serial;
+      iosDeviceSync = await syncIosDeviceAssignment({
+        action,
+        deviceNumber,
+        userName: action === 'issue' ? request.requester : 'ส่วนกลาง',
+        position: action === 'issue' ? request.department : 'คลัง IT'
+      });
+    }
+
     if (assetStatus && assignedSn) {
       await client.query(`
         UPDATE assets
@@ -1514,7 +1560,7 @@ app.patch('/api/asset-requests/:id/action', requireRole('staff'), async (req, re
     `, [nextStatus, assignedSn, reviewer || null, condition || null, note || '', JSON.stringify([event]), id, normalizedWorkflowType]);
     await refreshOperationalCounters(client);
     await client.query('COMMIT');
-    res.json(updated.rows[0]);
+    res.json({ ...updated.rows[0], iosDeviceSync });
   } catch (err) {
     if (client) {
       try { await client.query('ROLLBACK'); } catch (rbErr) { console.error('Rollback failed:', rbErr.message); }

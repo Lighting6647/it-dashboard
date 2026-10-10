@@ -2269,7 +2269,16 @@ function Dashboard({ currentUser, onLogout }) {
       await Promise.all([loadAssetRequests(), refreshOperationalStateFromDb()]);
       if (action === 'approve') setAssetApprovalPicker(null);
       if (action === 'request_return') alert('แจ้งขอคืนอุปกรณ์สำเร็จ กรุณานำอุปกรณ์ให้เจ้าหน้าที่ IT ตรวจรับ');
-      if (action === 'return') alert('IT ตรวจรับอุปกรณ์และอัปเดตสถานะคลังสำเร็จ');
+      if (['issue', 'return'].includes(action)) {
+        setExternalDevicesRefreshKey(previous => previous + 1);
+        const syncMessage = result.iosDeviceSync?.synced
+          ? ' และซิงค์ข้อมูลไปยัง iOS Device Monitor แล้ว'
+          : result.iosDeviceSync?.skipped === 'not-registered'
+            ? ' (Serial นี้ยังไม่ได้ลงทะเบียนใน iOS Device Monitor)'
+            : '';
+        if (action === 'issue') alert(`ส่งมอบอุปกรณ์สำเร็จ${syncMessage}`);
+        if (action === 'return') alert(`IT ตรวจรับและอัปเดตสถานะคลังสำเร็จ${syncMessage}`);
+      }
     } catch (err) {
       alert(err.message);
     } finally {
