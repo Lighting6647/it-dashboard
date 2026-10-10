@@ -241,7 +241,7 @@ function normalizeAssetStatus(value) {
 const IOS_DEVICE_MONITOR_BASE = process.env.IOS_DEVICE_MONITOR_BASE || 'https://ios-device-monitor-46w9.onrender.com';
 const IOS_DASHBOARD_SYNC_TOKEN = process.env.IOS_DASHBOARD_SYNC_TOKEN || '';
 
-async function syncIosDeviceAssignment({ action, deviceNumber, userName, position }) {
+async function syncIosDeviceAssignment({ action, deviceNumber, userName, position, itemType, accessories }) {
   if (!deviceNumber) return { synced: false, skipped: 'missing-device-number' };
   if (!IOS_DASHBOARD_SYNC_TOKEN) throw new Error('ยังไม่ได้ตั้งค่า IOS_DASHBOARD_SYNC_TOKEN สำหรับซิงค์ Device Monitor');
 
@@ -254,7 +254,7 @@ async function syncIosDeviceAssignment({ action, deviceNumber, userName, positio
         'Content-Type': 'application/json',
         'x-integration-token': IOS_DASHBOARD_SYNC_TOKEN
       },
-      body: JSON.stringify({ action, deviceNumber, userName, position }),
+      body: JSON.stringify({ action, deviceNumber, userName, position, itemType, accessories }),
       signal: controller.signal
     });
     const result = await response.json().catch(() => ({}));
@@ -1484,15 +1484,20 @@ app.patch('/api/asset-requests/:id/action', requireRole('staff'), async (req, re
     let iosDeviceSync = { synced: false, skipped: 'not-applicable' };
     if (assignedSn && ['issue', 'return'].includes(action)) {
       const syncAssetResult = await client.query(
-        'SELECT device_serial FROM assets WHERE sn = $1',
+        `SELECT device_serial, item_type,
+                COALESCE(details->>'accessories', details->>'accessory', '') AS accessories
+         FROM assets WHERE sn = $1`,
         [assignedSn]
       );
-      const deviceNumber = syncAssetResult.rows[0]?.device_serial;
+      const syncAsset = syncAssetResult.rows[0] || {};
+      const deviceNumber = syncAsset.device_serial;
       iosDeviceSync = await syncIosDeviceAssignment({
         action,
         deviceNumber,
         userName: action === 'issue' ? request.requester : 'ส่วนกลาง',
-        position: action === 'issue' ? request.department : 'คลัง IT'
+        position: action === 'issue' ? request.department : 'คลัง IT',
+        itemType: syncAsset.item_type || request.item_type,
+        accessories: syncAsset.accessories || ''
       });
     }
 
