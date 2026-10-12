@@ -4595,17 +4595,19 @@ html, body, #root {
 
 /* Print Media Stylesheet for PDF Report & QR Tag Sheet */
 @media print {
-    body * {
+    body.printing-pdf-report *,
+    body.printing-qr-tags * {
         visibility: hidden;
     }
-    .pdf-report-overlay,
-    .pdf-report-overlay *,
-    .qr-print-overlay,
-    .qr-print-overlay * {
+    body.printing-pdf-report .pdf-report-overlay,
+    body.printing-pdf-report .pdf-report-overlay *,
+    body.printing-qr-tags .qr-print-overlay,
+    body.printing-qr-tags .qr-print-overlay * {
         visibility: visible;
     }
-    .pdf-report-overlay,
-    .qr-print-overlay {
+    body.printing-pdf-report .pdf-report-overlay,
+    body.printing-qr-tags .qr-print-overlay {
+        display: block !important;
         position: absolute;
         left: 0;
         top: 0;
@@ -4615,6 +4617,15 @@ html, body, #root {
         backdrop-filter: none !important;
         margin: 0 !important;
         padding: 0 !important;
+    }
+    body.printing-pdf-report .pdf-report-overlay .modal,
+    body.printing-pdf-report .pdf-report-overlay .modal-body,
+    body.printing-qr-tags .qr-print-overlay .modal,
+    body.printing-qr-tags .qr-print-overlay .modal-body {
+        display: block !important;
+        max-height: none !important;
+        height: auto !important;
+        overflow: visible !important;
     }
     .pdf-executive-report {
         box-shadow: none !important;

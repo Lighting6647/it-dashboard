@@ -1894,7 +1894,7 @@ function Dashboard({ currentUser, onLogout }) {
   const [assetTypeFilter, setAssetTypeFilter] = useState('');
   const [assetRequests, setAssetRequests] = useState([]);
   const [assetRequestLoading, setAssetRequestLoading] = useState(false);
-  const [assetRequestForm, setAssetRequestForm] = useState({ requester: '', department: '', itemType: '', purpose: '', requestedDate: new Date().toISOString().slice(0, 10), notes: '', workflowType: '' });
+  const [assetRequestForm, setAssetRequestForm] = useState({ requester: '', department: '', itemType: '', purpose: '', requestedDate: new Date().toISOString().slice(0, 10), estimatedPrice: '', notes: '', workflowType: '' });
   const [assetWorkflowRole, setAssetWorkflowRole] = useState('requester');
   const [assetRequesterSearch, setAssetRequesterSearch] = useState('');
   const [assetApprovalPicker, setAssetApprovalPicker] = useState(null);
@@ -2118,6 +2118,13 @@ function Dashboard({ currentUser, onLogout }) {
     return () => document.body.classList.remove('modal-open');
   }, [activeModal]);
 
+  const printScopedView = (scopeClass) => {
+    const cleanup = () => document.body.classList.remove(scopeClass);
+    document.body.classList.add(scopeClass);
+    window.addEventListener('afterprint', cleanup, { once: true });
+    window.requestAnimationFrame(() => window.print());
+  };
+
   const requireAdminAccess = (openMenu) => {
     if (!isAdmin) {
       alert('บัญชีนี้ไม่มีสิทธิ์ผู้ดูแล IT');
@@ -2156,7 +2163,7 @@ function Dashboard({ currentUser, onLogout }) {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'ส่งคำขอไม่สำเร็จ');
-      setAssetRequestForm({ requester: '', department: '', itemType: '', purpose: '', requestedDate: new Date().toISOString().slice(0, 10), notes: '', workflowType: '' });
+      setAssetRequestForm({ requester: '', department: '', itemType: '', purpose: '', requestedDate: new Date().toISOString().slice(0, 10), estimatedPrice: '', notes: '', workflowType: '' });
       await loadAssetRequests();
       alert(result.count > 1
         ? `ส่งคำขอเบิก ${result.count} เครื่องสำเร็จ เลขที่ #${result.ids.join(', #')}`
@@ -2179,6 +2186,9 @@ function Dashboard({ currentUser, onLogout }) {
     if (purpose === null) return;
     const dueDate = window.prompt('กำหนดคืน (YYYY-MM-DD หรือเว้นว่าง)', request.due_date ? String(request.due_date).slice(0, 10) : '');
     if (dueDate === null) return;
+    const estimatedPrice = window.prompt('ราคาประเมิน/ราคาสั่งซื้อต่อรายการ (บาท)', String(Number(request.estimated_price || 0)));
+    if (estimatedPrice === null) return;
+    if (!Number.isFinite(Number(estimatedPrice)) || Number(estimatedPrice) < 0) return alert('กรุณาระบุราคาเป็นตัวเลขตั้งแต่ 0 ขึ้นไป');
     const notes = window.prompt('หมายเหตุ', request.notes || '');
     if (notes === null) return;
 
@@ -2193,7 +2203,7 @@ function Dashboard({ currentUser, onLogout }) {
       const response = await authFetch(`${API_BASE}/api/asset-requests/${request.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ requester, department, itemType, purpose, dueDate, notes })
+        body: JSON.stringify({ requester, department, itemType, purpose, dueDate, estimatedPrice: Number(estimatedPrice), notes })
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'แก้ไขคำขอไม่สำเร็จ');
@@ -6324,6 +6334,7 @@ function Dashboard({ currentUser, onLogout }) {
                     <label>แผนก <input required value={assetRequestForm.department} onChange={e => setAssetRequestForm(p => ({ ...p, department: e.target.value }))} /></label>
                     <label>หมายเลขเครื่อง / ประเภทอุปกรณ์ <textarea required rows="2" placeholder="เช่น iPad-006, iPad-007" value={assetRequestForm.itemType} onChange={e => setAssetRequestForm(p => ({ ...p, itemType: e.target.value }))} /></label>
                     <label>วันที่เบิก <input required type="date" value={assetRequestForm.requestedDate} onChange={e => setAssetRequestForm(p => ({ ...p, requestedDate: e.target.value }))} /></label>
+                    <label>ราคาประเมิน/ราคาสั่งซื้อต่อรายการ (บาท) <input min="0" step="0.01" type="number" value={assetRequestForm.estimatedPrice} onChange={e => setAssetRequestForm(p => ({ ...p, estimatedPrice: e.target.value }))} /></label>
                     <label>ประเภทการดำเนินการ
                       <select required value={assetRequestForm.workflowType} onChange={e => setAssetRequestForm(p => ({ ...p, workflowType: e.target.value }))}>
                         <option value="">-- เลือกทุกครั้ง --</option>
@@ -6348,15 +6359,16 @@ function Dashboard({ currentUser, onLogout }) {
                   </div>
                   <div className="workflow-table-wrap">
                     <table className="details-table workflow-table">
-                      <thead><tr><th>เลขที่</th><th>ผู้ขอ/แผนก</th><th>อุปกรณ์/เหตุผล</th><th>กำหนดคืน</th><th>เครื่องที่จัดสรร</th><th>สถานะ</th><th>จัดการ</th><th>แก้ไข</th></tr></thead>
+                      <thead><tr><th>เลขที่</th><th>ผู้ขอ/แผนก</th><th>อุปกรณ์/เหตุผล</th><th>ราคา</th><th>กำหนดคืน</th><th>เครื่องที่จัดสรร</th><th>สถานะ</th><th>จัดการ</th><th>แก้ไข</th></tr></thead>
                       <tbody>
                         {displayedRequests.length === 0 ? (
-                          <tr><td colSpan="8" className="workflow-empty">ยังไม่พบคำขอเบิกอุปกรณ์</td></tr>
+                          <tr><td colSpan="9" className="workflow-empty">ยังไม่พบคำขอเบิกอุปกรณ์</td></tr>
                         ) : displayedRequests.map(request => (
                           <tr key={request.id}>
                             <td><strong>#{request.id}</strong><small>{request.requested_date || request.created_at ? new Date(request.requested_date || request.created_at).toLocaleDateString('th-TH') : '-'}</small></td>
                             <td><strong>{request.requester}</strong><small>{request.department}</small></td>
                             <td><strong>{request.item_type}</strong><small>{request.purpose}</small></td>
+                            <td>{formatThaiBaht(request.estimated_price || 0)}</td>
                             <td>{request.due_date ? String(request.due_date).slice(0, 10) : '-'}</td>
                             <td>{request.device_serial ? <><strong>{request.device_serial}</strong><small>{request.assigned_item_type}</small></> : '-'}</td>
                             <td><span className={`workflow-status status-${request.status}`}>{statusLabels[request.status] || request.status}</span></td>
@@ -8449,6 +8461,8 @@ function Dashboard({ currentUser, onLogout }) {
       const tickets = activeData.ticketsList || data[currentMonth]?.ticketsList || [];
       const ticketsWithCost = tickets.filter(ticket => Number(ticket.cost || ticket.repairCost || ticket.price || 0) > 0);
       const totalRepairExpense = ticketsWithCost.reduce((sum, ticket) => sum + Number(ticket.cost || ticket.repairCost || ticket.price || 0), 0);
+      const pendingPurchaseRequests = assetRequests.filter(request => ['pending', 'need_info'].includes(request.status) && !request.assigned_asset_sn);
+      const totalPendingPurchasePrice = pendingPurchaseRequests.reduce((sum, request) => sum + Number(request.estimated_price || 0), 0);
       const securityIncidents = Number(activeData.securityIncidents || 0);
       const securityScore = Math.max(70, 100 - (securityIncidents * 10));
 
@@ -8461,7 +8475,7 @@ function Dashboard({ currentUser, onLogout }) {
               </h3>
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button
-                  onClick={() => window.print()}
+                  onClick={() => printScopedView('printing-pdf-report')}
                   className="sidebar-btn"
                   style={{ width: 'auto', padding: '8px 16px', backgroundColor: '#0284c7', border: 'none', color: 'white' }}
                 >
@@ -8510,6 +8524,11 @@ function Dashboard({ currentUser, onLogout }) {
                       <strong className="pdf-kpi-value">{activeData.assetsVacant} / {activeData.assetsBroken} เครื่อง</strong>
                       <small>ใกล้หมดอายุ {activeData.assetsExpiring} เครื่อง</small>
                     </div>
+                    <div className="pdf-kpi-box">
+                      <span className="pdf-kpi-label">รายการรอสั่งซื้อ</span>
+                      <strong className="pdf-kpi-value">{pendingPurchaseRequests.length} รายการ</strong>
+                      <small>มูลค่ารวม {formatThaiBaht(totalPendingPurchasePrice)}</small>
+                    </div>
                   </div>
                 </div>
 
@@ -8554,7 +8573,45 @@ function Dashboard({ currentUser, onLogout }) {
                 </div>
 
                 <div className="pdf-section">
-                  <h3 className="pdf-section-title">3. ข้อเสนอแนะและแผนงานปรับปรุง (IT Recommendations)</h3>
+                  <h3 className="pdf-section-title">3. รายการรอสั่งซื้ออุปกรณ์ (Pending Purchase Requests)</h3>
+                  <table className="pdf-table">
+                    <thead>
+                      <tr>
+                        <th>เลขที่</th>
+                        <th>วันที่ขอ</th>
+                        <th>ผู้ขอ / แผนก</th>
+                        <th>อุปกรณ์</th>
+                        <th>เหตุผล</th>
+                        <th>สถานะ</th>
+                        <th style={{ textAlign: 'right' }}>ราคา (บาท)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pendingPurchaseRequests.length > 0 ? pendingPurchaseRequests.map(request => (
+                        <tr key={request.id}>
+                          <td><strong>#{request.id}</strong></td>
+                          <td>{request.requested_date ? String(request.requested_date).slice(0, 10) : '-'}</td>
+                          <td>{request.requester}<br /><small>{request.department}</small></td>
+                          <td>{request.item_type}</td>
+                          <td>{request.purpose || '-'}</td>
+                          <td>{request.status === 'need_info' ? 'รอข้อมูลเพิ่ม' : 'รออนุมัติ/สั่งซื้อ'}</td>
+                          <td style={{ textAlign: 'right' }}><strong>{formatThaiBaht(request.estimated_price || 0)}</strong></td>
+                        </tr>
+                      )) : (
+                        <tr><td colSpan="7" style={{ textAlign: 'center', color: '#64748b' }}>ไม่มีรายการรอสั่งซื้อ</td></tr>
+                      )}
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <td colSpan="6" style={{ textAlign: 'right' }}><strong>รวมมูลค่ารอสั่งซื้อ:</strong></td>
+                        <td style={{ textAlign: 'right' }}><strong style={{ color: '#0369a1', fontSize: '1.05rem' }}>{formatThaiBaht(totalPendingPurchasePrice)}</strong></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+
+                <div className="pdf-section">
+                  <h3 className="pdf-section-title">4. ข้อเสนอแนะและแผนงานปรับปรุง (IT Recommendations)</h3>
                   <ul className="pdf-list">
                     {activeData.recommendations && activeData.recommendations.length > 0 ? (
                       activeData.recommendations.map((rec, idx) => <li key={idx}>{rec}</li>)
@@ -8614,7 +8671,7 @@ function Dashboard({ currentUser, onLogout }) {
                   style={{ padding: '6px 12px' }}
                 />
                 <button
-                  onClick={() => window.print()}
+                  onClick={() => printScopedView('printing-qr-tags')}
                   className="sidebar-btn qr-print-btn"
                   style={{ padding: '8px 16px', backgroundColor: '#0d9488', border: 'none', color: 'white' }}
                 >

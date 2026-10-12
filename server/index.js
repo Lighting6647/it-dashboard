@@ -708,12 +708,14 @@ async function initDb() {
           return_date TIMESTAMPTZ,
           return_condition VARCHAR(50),
           workflow_type VARCHAR(50) NOT NULL DEFAULT 'checkout',
+          estimated_price NUMERIC(12, 2) NOT NULL DEFAULT 0,
           notes TEXT,
           history JSONB NOT NULL DEFAULT '[]'::jsonb,
           created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
           updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
       `);
+      await client.query(`ALTER TABLE asset_requests ADD COLUMN IF NOT EXISTS estimated_price NUMERIC(12, 2) NOT NULL DEFAULT 0`);
       await client.query(`
         CREATE UNIQUE INDEX IF NOT EXISTS asset_requests_one_active_asset
         ON asset_requests (assigned_asset_sn)
@@ -1243,13 +1245,17 @@ app.get('/api/asset-requests', async (_req, res) => {
 });
 
 app.post('/api/asset-requests', requireRole('staff'), async (req, res) => {
-  const { requester, department, itemType, purpose, requestedDate, dueDate, notes, workflowType } = req.body;
+  const { requester, department, itemType, purpose, requestedDate, dueDate, notes, workflowType, estimatedPrice } = req.body;
   const normalizedWorkflowType = ['checkout', 'replacement', 'resignation'].includes(workflowType) ? workflowType : '';
+  const normalizedEstimatedPrice = Number(estimatedPrice || 0);
   if (!requester || !department || !itemType || !purpose || !requestedDate || !normalizedWorkflowType) {
     return res.status(400).json({ error: 'กรุณากรอกข้อมูลคำขอให้ครบ' });
   }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(requestedDate)) {
     return res.status(400).json({ error: 'รูปแบบวันที่เบิกต้องเป็น YYYY-MM-DD' });
+  }
+  if (!Number.isFinite(normalizedEstimatedPrice) || normalizedEstimatedPrice < 0) {
+    return res.status(400).json({ error: 'ราคาประเมินต้องเป็นตัวเลขตั้งแต่ 0 ขึ้นไป' });
   }
   const requestedItems = Array.from(new Set(String(itemType)
     .split(/[,;\n]+/)
@@ -1274,10 +1280,10 @@ app.post('/api/asset-requests', requireRole('staff'), async (req, res) => {
         note: requestedItems.length > 1 ? `ส่งคำขอเบิกแบบหลายเครื่อง (${requestedItems.length} รายการ)` : 'ส่งคำขอเบิกอุปกรณ์'
       };
       const result = await client.query(`
-        INSERT INTO asset_requests (requester, department, item_type, purpose, requested_date, due_date, notes, workflow_type, history)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        INSERT INTO asset_requests (requester, department, item_type, purpose, requested_date, due_date, notes, workflow_type, estimated_price, history)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         RETURNING *
-      `, [requester, department, item, purpose, requestedDate, dueDate || null, notes || '', normalizedWorkflowType, JSON.stringify([event])]);
+      `, [requester, department, item, purpose, requestedDate, dueDate || null, notes || '', normalizedWorkflowType, normalizedEstimatedPrice, JSON.stringify([event])]);
       created.push(result.rows[0]);
     }
     await client.query('COMMIT');
@@ -1324,7 +1330,8 @@ app.get('/api/data-integrity/months', async (_req, res) => {
 
 app.patch('/api/asset-requests/:id', requireRole('admin'), async (req, res) => {
   const id = Number(req.params.id);
-  const { requester, department, itemType, purpose, dueDate, notes } = req.body;
+  const { requester, department, itemType, purpose, dueDate, notes, estimatedPrice } = req.body;
+  const normalizedEstimatedPrice = Number(estimatedPrice || 0);
   if (!Number.isInteger(id)) {
     return res.status(400).json({ error: 'เลขที่คำขอไม่ถูกต้อง' });
   }
@@ -1333,6 +1340,9 @@ app.patch('/api/asset-requests/:id', requireRole('admin'), async (req, res) => {
   }
   if (dueDate && !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) {
     return res.status(400).json({ error: 'รูปแบบกำหนดคืนต้องเป็น YYYY-MM-DD' });
+  }
+  if (!Number.isFinite(normalizedEstimatedPrice) || normalizedEstimatedPrice < 0) {
+    return res.status(400).json({ error: 'ราคาประเมินต้องเป็นตัวเลขตั้งแต่ 0 ขึ้นไป' });
   }
 
   let client;
@@ -1358,10 +1368,11 @@ app.patch('/api/asset-requests/:id', requireRole('admin'), async (req, res) => {
           item_type = $3,
           purpose = $4,
           due_date = $5,
-          notes = $6,
-          history = $7,
+          estimated_price = $6,
+          notes = $7,
+          history = $8,
           updated_at = NOW()
-      WHERE id = $8
+      WHERE id = $9
       RETURNING *
     `, [
       requester.trim(),
@@ -1369,6 +1380,7 @@ app.patch('/api/asset-requests/:id', requireRole('admin'), async (req, res) => {
       itemType.trim(),
       purpose.trim(),
       dueDate || null,
+      normalizedEstimatedPrice,
       typeof notes === 'string' ? notes.trim() : '',
       JSON.stringify(history),
       id
