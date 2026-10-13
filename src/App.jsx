@@ -3693,10 +3693,31 @@ function Dashboard({ currentUser, onLogout }) {
       .filter((category) => category.match(type))
       .map((category) => ({ asset, category }));
   });
-  const mainAssetBreakdown = mainAssetCategories.map((category) => ({
-    label: category.label,
-    count: primaryAssetEntries.filter((entry) => entry.category.label === category.label).length,
-  }));
+  const getRegistryAssetCategory = (itemType) => {
+    const type = String(itemType || '').trim();
+    if (!type) return 'ไม่ระบุประเภท';
+    if (/computer\s*\(pc\)|\bpc\b/i.test(type)) return 'PC';
+    if (/notebook/i.test(type)) return 'Notebook';
+    if (/imac/i.test(type)) return 'iMac';
+    if (/macbook/i.test(type)) return 'MacBook';
+    if (/iphone/i.test(type)) return 'iPhone';
+    if (/ipad/i.test(type)) return 'iPad';
+    if (/monitor|mornitor/i.test(type)) return 'Monitor';
+    if (/printer/i.test(type)) return 'Printer';
+    if (/cctv|vstarcam/i.test(type)) return 'CCTV';
+    if (/keyboard/i.test(type)) return 'Keyboard';
+    if (/mouse/i.test(type)) return 'Mouse';
+    if (/hub.*usb|usb.*hub/i.test(type)) return 'USB Hub';
+    if (/external\s*(hdd|hard\s*disk)/i.test(type)) return 'External HDD';
+    return type;
+  };
+
+  const registryAssetBreakdown = Array.from(assetsList.reduce((groups, asset) => {
+    const label = getRegistryAssetCategory(asset.itemType);
+    groups.set(label, (groups.get(label) || 0) + 1);
+    return groups;
+  }, new Map()), ([label, count]) => ({ label, count }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, 'th'));
 
   // Status cards represent the complete registry, including printers, CCTV,
   // accessories and any future categories—not only the five headline types.
@@ -3706,12 +3727,13 @@ function Dashboard({ currentUser, onLogout }) {
   const warehouseLostCount = assetsList.filter((asset) => normalizeAssetStatus(asset.status) === 'สูญหาย').length;
   const pricedAssets = assetsList.filter((asset) => Number(asset.marketPrice) > 0 && normalizeAssetStatus(asset.status) !== 'สูญหาย');
   const calculatedAssetValue = pricedAssets.reduce((sum, asset) => sum + Number(asset.marketPrice || 0), 0);
-  const primaryVacantStockEntries = primaryAssetEntries.filter(({ asset }) => normalizeAssetStatus(asset.status) === 'ว่าง');
-  const vacantStockBreakdown = Array.from(primaryVacantStockEntries.reduce((groups, entry) => {
-    const label = entry.category.label;
-    groups.set(label, (groups.get(label) || 0) + 1);
-    return groups;
-  }, new Map()), ([label, count]) => ({ label, count }))
+  const vacantStockBreakdown = Array.from(assetsList
+    .filter((asset) => normalizeAssetStatus(asset.status) === 'ว่าง')
+    .reduce((groups, asset) => {
+      const label = getRegistryAssetCategory(asset.itemType);
+      groups.set(label, (groups.get(label) || 0) + 1);
+      return groups;
+    }, new Map()), ([label, count]) => ({ label, count }))
     .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, 'th'));
 
   const today = new Date();
@@ -5870,7 +5892,7 @@ function Dashboard({ currentUser, onLogout }) {
                   </div>
                 </div>
                 <div className="main-assets-breakdown">
-                  {mainAssetBreakdown.map((asset) => (
+                  {registryAssetBreakdown.map((asset) => (
                     <div className="main-asset-count" key={asset.label}>
                       <span>{asset.label}</span>
                       <strong>{asset.count}</strong>

@@ -838,6 +838,20 @@ body {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 6px;
     margin-top: 10px;
+    max-height: 178px;
+    padding-right: 3px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(96, 165, 250, 0.45) transparent;
+}
+
+.main-assets-breakdown::-webkit-scrollbar {
+    width: 5px;
+}
+
+.main-assets-breakdown::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba(96, 165, 250, 0.45);
 }
 
 .asset-total-summary {
