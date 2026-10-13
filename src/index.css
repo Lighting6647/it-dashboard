@@ -679,10 +679,23 @@ body {
 
 .software-license-toolbar {
     display: grid;
-    grid-template-columns: minmax(260px, 1fr) auto auto;
+    grid-template-columns: minmax(260px, 1fr) auto auto auto auto;
     align-items: center;
     gap: 10px;
     margin: 0 0 12px;
+}
+
+.software-pdf-download {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 36px;
+    white-space: nowrap;
+}
+
+.software-print-header {
+    display: none;
 }
 
 .software-license-search {
@@ -4622,17 +4635,21 @@ html, body, #root {
 /* Print Media Stylesheet for PDF Report & QR Tag Sheet */
 @media print {
     body.printing-pdf-report *,
-    body.printing-qr-tags * {
+    body.printing-qr-tags *,
+    body.printing-software-license * {
         visibility: hidden;
     }
     body.printing-pdf-report .pdf-report-overlay,
     body.printing-pdf-report .pdf-report-overlay *,
     body.printing-qr-tags .qr-print-overlay,
-    body.printing-qr-tags .qr-print-overlay * {
+    body.printing-qr-tags .qr-print-overlay *,
+    body.printing-software-license .software-license-report-overlay,
+    body.printing-software-license .software-license-report-overlay * {
         visibility: visible;
     }
     body.printing-pdf-report .pdf-report-overlay,
-    body.printing-qr-tags .qr-print-overlay {
+    body.printing-qr-tags .qr-print-overlay,
+    body.printing-software-license .software-license-report-overlay {
         display: block !important;
         position: absolute;
         left: 0;
@@ -4647,11 +4664,48 @@ html, body, #root {
     body.printing-pdf-report .pdf-report-overlay .modal,
     body.printing-pdf-report .pdf-report-overlay .modal-body,
     body.printing-qr-tags .qr-print-overlay .modal,
-    body.printing-qr-tags .qr-print-overlay .modal-body {
+    body.printing-qr-tags .qr-print-overlay .modal-body,
+    body.printing-software-license .software-license-report-overlay .modal,
+    body.printing-software-license .software-license-report-overlay .modal-body {
         display: block !important;
         max-height: none !important;
         height: auto !important;
         overflow: visible !important;
+    }
+    body.printing-software-license .software-license-report-overlay .table-responsive {
+        overflow: visible !important;
+    }
+    body.printing-software-license .software-license-toolbar {
+        display: none !important;
+    }
+    body.printing-software-license .software-print-header {
+        display: block !important;
+        margin: 0 0 14px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #2563eb;
+        color: #0f172a;
+    }
+    body.printing-software-license .software-print-header h2,
+    body.printing-software-license .software-print-header p {
+        margin: 0 0 4px;
+    }
+    body.printing-software-license .details-table {
+        width: 100% !important;
+        min-width: 0 !important;
+        color: #0f172a !important;
+        font-size: 8pt !important;
+    }
+    body.printing-software-license .details-table th {
+        position: static !important;
+        background: #e2e8f0 !important;
+        color: #0f172a !important;
+    }
+    body.printing-software-license .details-table td {
+        background: #ffffff !important;
+        color: #0f172a !important;
+    }
+    body.printing-software-license .software-admin-column {
+        display: none !important;
     }
     .pdf-executive-report {
         box-shadow: none !important;

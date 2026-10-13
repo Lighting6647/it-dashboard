@@ -7155,7 +7155,7 @@ function Dashboard({ currentUser, onLogout }) {
 
       {/* MODAL 3: EXPIRING SOFTWARE AGREEMENTS */}
       {activeModal === 'expiringSoftware' && (
-        <div className="modal-overlay active">
+        <div className="modal-overlay active software-license-report-overlay">
           <div className="modal large software-license-modal dashboard-fullscreen-modal">
             <header className="modal-header">
               <h3>ทะเบียนโปรแกรมและ License ({activeData.monthName})</h3>
@@ -7164,7 +7164,7 @@ function Dashboard({ currentUser, onLogout }) {
             <div className="modal-body">
               {isAdmin && <button
                 type="button"
-                className="btn-details software-form-toggle"
+                className="btn-details software-form-toggle no-print"
                 onClick={() => setSoftwareFormExpanded(previous => !previous)}
                 aria-expanded={softwareFormExpanded}
                 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: softwareFormExpanded ? '10px' : '16px' }}
@@ -7172,7 +7172,7 @@ function Dashboard({ currentUser, onLogout }) {
                 {softwareFormExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                 {softwareFormExpanded ? 'ซ่อนฟอร์มเพิ่ม / แก้ไข License' : 'เปิดฟอร์มเพิ่ม / แก้ไข License'}
               </button>}
-              {isAdmin && softwareFormExpanded && <form onSubmit={saveSoftwareLicense} className="software-license-form">
+              {isAdmin && softwareFormExpanded && <form onSubmit={saveSoftwareLicense} className="software-license-form no-print">
                 <div className="form-grid">
                   <div className="form-group">
                     <label>ชื่อซอฟต์แวร์/โปรแกรม</label>
@@ -7191,8 +7191,8 @@ function Dashboard({ currentUser, onLogout }) {
                     <input value={softwarePaymentChannel} onChange={(event) => setSoftwarePaymentChannel(event.target.value)} />
                   </div>
                   <div className="form-group">
-                    <label>วันที่/รอบชำระเงิน</label>
-                    <input value={softwarePaymentDate} onChange={(event) => setSoftwarePaymentDate(event.target.value)} />
+                    <label>ประเภท</label>
+                    <input value={softwarePaymentDate} onChange={(event) => setSoftwarePaymentDate(event.target.value)} placeholder="เช่น รายเดือน หรือ รายปี" />
                   </div>
                   <div className="form-group">
                     <label>อีเมลที่สมัคร</label>
@@ -7236,6 +7236,11 @@ function Dashboard({ currentUser, onLogout }) {
                   <button type="submit" className="btn-save">{editingSoftwareIndex === null ? 'เพิ่ม License' : 'บันทึกการแก้ไข'}</button>
                 </div>
               </form>}
+              <div className="software-print-header">
+                <h2>ทะเบียนโปรแกรมและ License</h2>
+                <p>ประจำเดือน {activeData.monthName} · ประเภท {softwareBillingFilter === 'monthly' ? 'รายเดือน' : softwareBillingFilter === 'yearly' ? 'รายปี' : 'ทั้งหมด'}</p>
+                <p>จำนวน {filteredSoftwareLicenses.length.toLocaleString()} รายการ · รวมราคา {formatThaiBaht(filteredSoftwareTotalCost)}</p>
+              </div>
               <div className="software-license-toolbar">
                 <label className="software-license-search">
                   <Search size={17} aria-hidden="true" />
@@ -7269,6 +7274,15 @@ function Dashboard({ currentUser, onLogout }) {
                 <span className="software-price-total">
                   รวมราคา <strong>{formatThaiBaht(filteredSoftwareTotalCost)}</strong>
                 </span>
+                <button
+                  type="button"
+                  className="btn-details software-pdf-download no-print"
+                  onClick={() => printScopedView('printing-software-license')}
+                  title="เปิดหน้าต่างบันทึกไฟล์ โดยเลือก Save as PDF"
+                >
+                  <Download size={16} />
+                  ดาวน์โหลด PDF
+                </button>
               </div>
               <div className="table-responsive" style={{ overflowX: 'auto' }}>
                 <table className="details-table">
@@ -7281,11 +7295,11 @@ function Dashboard({ currentUser, onLogout }) {
                       <th>รวม</th>
                       <th>ราคา</th>
                       <th>ช่องทางชำระ</th>
-                      <th>วันที่ชำระ</th>
+                      <th>ประเภท</th>
                       <th>วันหมดสัญญา</th>
                       <th>อีเมลสมัคร</th>
                       <th>ผู้ใช้งานปัจจุบัน</th>
-                      {isAdmin && <th>จัดการ</th>}
+                      {isAdmin && <th className="software-admin-column">จัดการ</th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -7303,7 +7317,7 @@ function Dashboard({ currentUser, onLogout }) {
                           <td>{soft.expiringDate || '-'}</td>
                           <td>{soft.registeredEmail || '-'}</td>
                           <td style={{ minWidth: '160px' }}>{soft.currentUsers || '-'}</td>
-                          {isAdmin && <td>
+                          {isAdmin && <td className="software-admin-column">
                             <div className="software-row-actions">
                               <button type="button" className="btn-details" onClick={() => editSoftwareLicense(soft, originalIndex)}>แก้ไข</button>
                               <button type="button" className="console-delete-btn" onClick={() => deleteSoftwareLicense(originalIndex)}>ลบ</button>
