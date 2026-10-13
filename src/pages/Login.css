@@ -150,3 +150,19 @@
   opacity: 0.6;
   cursor: wait;
 }
+
+.login-logo {
+  width: 175px !important;
+  height: auto !important;
+  aspect-ratio: 1252 / 614;
+  object-fit: contain !important;
+  border-radius: 12px !important;
+}
+
+@media (max-width: 560px) {
+  .login-logo {
+    width: 145px !important;
+    height: auto !important;
+  }
+}
+
