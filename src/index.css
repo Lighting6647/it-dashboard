@@ -4673,7 +4673,7 @@ html, body, #root {
         overflow: visible !important;
     }
     body.printing-software-license .software-license-report-overlay .table-responsive {
-        overflow: visible !important;
+        display: none !important;
     }
     body.printing-software-license .software-license-toolbar {
         display: none !important;
@@ -4790,6 +4790,115 @@ html, body, #root {
         border-bottom: 1px solid #cbd5e1;
         color: #0f172a !important;
         font-size: 10pt;
+    }
+    body.printing-software-license .software-pdf-program-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+    body.printing-software-license .software-pdf-program-card {
+        break-inside: avoid;
+        page-break-inside: avoid;
+        overflow: hidden;
+        border: 1px solid #cbd5e1;
+        border-radius: 9px;
+        background: #ffffff !important;
+        color: #0f172a !important;
+    }
+    body.printing-software-license .software-pdf-program-heading {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 8px 10px;
+        border-bottom: 1px solid #dbeafe;
+        background: #eff6ff !important;
+    }
+    body.printing-software-license .software-pdf-program-heading span,
+    body.printing-software-license .software-pdf-price span,
+    body.printing-software-license .software-pdf-owner span,
+    body.printing-software-license .software-pdf-license-metrics span {
+        display: block;
+        margin-bottom: 2px;
+        color: #64748b !important;
+        font-size: 6.8pt;
+    }
+    body.printing-software-license .software-pdf-program-heading h4 {
+        margin: 0;
+        color: #0f3d68 !important;
+        font-size: 10pt;
+        line-height: 1.25;
+        overflow-wrap: anywhere;
+    }
+    body.printing-software-license .software-pdf-price {
+        flex: 0 0 auto;
+        text-align: right;
+    }
+    body.printing-software-license .software-pdf-price strong {
+        color: #047857 !important;
+        font-size: 9pt;
+    }
+    body.printing-software-license .software-pdf-owner {
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+        padding: 6px 10px 2px;
+        font-size: 7.5pt;
+    }
+    body.printing-software-license .software-pdf-owner span {
+        display: inline;
+        margin: 0;
+    }
+    body.printing-software-license .software-pdf-owner strong {
+        overflow-wrap: anywhere;
+    }
+    body.printing-software-license .software-pdf-license-metrics {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 5px;
+        padding: 5px 10px 6px;
+    }
+    body.printing-software-license .software-pdf-license-metrics > div {
+        padding: 5px 7px;
+        border-radius: 6px;
+        background: #f8fafc !important;
+    }
+    body.printing-software-license .software-pdf-license-metrics strong {
+        color: #1d4ed8 !important;
+        font-size: 9pt;
+    }
+    body.printing-software-license .software-pdf-program-details {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0;
+        margin: 0;
+        border-top: 1px solid #e2e8f0;
+    }
+    body.printing-software-license .software-pdf-program-details > div {
+        min-width: 0;
+        padding: 5px 8px;
+        border-right: 1px solid #e2e8f0;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    body.printing-software-license .software-pdf-program-details > div:nth-child(even) {
+        border-right: 0;
+    }
+    body.printing-software-license .software-pdf-program-details > div.users {
+        grid-column: 1 / -1;
+        border-right: 0;
+    }
+    body.printing-software-license .software-pdf-program-details dt {
+        margin-bottom: 2px;
+        color: #64748b !important;
+        font-size: 6.5pt;
+        font-weight: 600;
+    }
+    body.printing-software-license .software-pdf-program-details dd {
+        margin: 0;
+        color: #1e293b !important;
+        font-size: 7pt;
+        line-height: 1.25;
+        overflow-wrap: anywhere;
+        white-space: normal;
     }
     body.printing-software-license .details-table {
         width: 100% !important;

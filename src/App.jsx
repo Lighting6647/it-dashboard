@@ -7284,6 +7284,38 @@ function Dashboard({ currentUser, onLogout }) {
                   </div>
                 </div>
                 <h3>รายละเอียดทะเบียนโปรแกรมและ License</h3>
+                <div className="software-pdf-program-grid">
+                  {filteredSoftwareLicenses.map(({ item: soft, originalIndex }) => {
+                    const licenseTotal = soft.licenses ?? (Number(soft.used || 0) + Number(soft.vacant || 0));
+                    return (
+                      <article className="software-pdf-program-card" key={`pdf-software-${originalIndex}`}>
+                        <div className="software-pdf-program-heading">
+                          <div>
+                            <span>ซอฟต์แวร์ / โปรแกรม</span>
+                            <h4>{soft.name || '-'}</h4>
+                          </div>
+                          <div className="software-pdf-price">
+                            <span>ราคา</span>
+                            <strong>{formatThaiBaht(soft.monthlyCost ?? soft.price ?? 0)}</strong>
+                          </div>
+                        </div>
+                        <div className="software-pdf-owner"><span>Owner</span><strong>{soft.owner || '-'}</strong></div>
+                        <div className="software-pdf-license-metrics">
+                          <div><span>ใช้งาน</span><strong>{Number(soft.used || 0).toLocaleString()}</strong></div>
+                          <div><span>ว่าง</span><strong>{Number(soft.vacant || 0).toLocaleString()}</strong></div>
+                          <div><span>รวม</span><strong>{Number(licenseTotal || 0).toLocaleString()}</strong></div>
+                        </div>
+                        <dl className="software-pdf-program-details">
+                          <div><dt>ช่องทางชำระ</dt><dd>{soft.paymentChannel || '-'}</dd></div>
+                          <div><dt>ประเภท</dt><dd>{soft.paymentDate || '-'}</dd></div>
+                          <div><dt>วันหมดสัญญา</dt><dd>{soft.expiringDate || '-'}</dd></div>
+                          <div><dt>อีเมลสมัคร</dt><dd>{soft.registeredEmail || '-'}</dd></div>
+                          <div className="users"><dt>ผู้ใช้งานปัจจุบัน</dt><dd>{soft.currentUsers || '-'}</dd></div>
+                        </dl>
+                      </article>
+                    );
+                  })}
+                </div>
               </div>
               <div className="software-license-toolbar">
                 <label className="software-license-search">
