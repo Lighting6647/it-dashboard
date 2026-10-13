@@ -3807,16 +3807,56 @@ function Dashboard({ currentUser, onLogout }) {
   const filteredSoftwareUtilization = filteredSoftwareLicenseTotal > 0
     ? Math.round((filteredSoftwareUsed / filteredSoftwareLicenseTotal) * 100)
     : 0;
-  const softwareUsageOverviewCards = filteredSoftwareLicenses
-    .map(({ item, originalIndex }) => ({
-      item,
+  const softwareUsageOverviewCards = Array.from(filteredSoftwareLicenses.reduce((groups, { item, originalIndex }) => {
+    const displayName = String(item.name || 'ไม่ระบุชื่อซอฟต์แวร์').trim();
+    const key = displayName.normalize('NFKC').toLocaleLowerCase('en-US').replace(/\s+/g, ' ');
+    const current = groups.get(key) || {
+      name: displayName,
       originalIndex,
-      userCount: Math.max(
-        Number(item.used || 0),
-        String(item.currentUsers || '').split(/[,;\n]+/).map(name => name.trim()).filter(Boolean).length,
-      ),
-    }))
-    .sort((a, b) => b.userCount - a.userCount || String(a.item.name || '').localeCompare(String(b.item.name || ''), 'th'));
+      used: 0,
+      price: 0,
+      users: new Set(),
+      paymentChannels: new Set(),
+      billingTypes: new Set(),
+      expiryDates: new Set(),
+      registeredEmails: new Set(),
+    };
+    current.used += Number(item.used || 0);
+    current.price += Number(item.monthlyCost ?? item.price ?? 0);
+    String(item.currentUsers || '').split(/[,\n]+/).map(value => value.trim()).filter(value => value && value !== '-' && value !== 'ยังไม่ระบุ' && value !== 'ยังไม่ระบุรายชื่อผู้ใช้งาน').forEach(value => current.users.add(value));
+    [item.paymentChannel].filter(Boolean).forEach(value => current.paymentChannels.add(String(value).trim()));
+    [item.paymentDate].filter(Boolean).forEach(value => current.billingTypes.add(String(value).trim()));
+    [item.expiringDate].filter(Boolean).forEach(value => current.expiryDates.add(String(value).trim()));
+    [item.registeredEmail].filter(Boolean).forEach(value => current.registeredEmails.add(String(value).trim()));
+    groups.set(key, current);
+    return groups;
+  }, new Map()).values())
+    .map(group => {
+      const rawUserList = Array.from(group.users);
+      const parenthesizedNicknames = new Set();
+      rawUserList.forEach(name => {
+        const match = name.match(/[\(（]([^\)）]+)[\)）]/);
+        if (match && match[1]) {
+          parenthesizedNicknames.add(match[1].trim());
+        }
+      });
+      const resolvedUsers = rawUserList.filter(name => {
+        if (name.includes('(') || name.includes('（')) return true;
+        return !parenthesizedNicknames.has(name);
+      });
+      const finalUsers = resolvedUsers.length > 0 ? resolvedUsers : rawUserList;
+
+      return {
+        ...group,
+        userCount: Math.max(group.used, finalUsers.length),
+        userNames: finalUsers.join(', ') || 'ยังไม่ระบุรายชื่อผู้ใช้งาน',
+        paymentChannel: Array.from(group.paymentChannels).join(', ') || '-',
+        billingType: Array.from(group.billingTypes).join(', ') || '-',
+        expiryDate: Array.from(group.expiryDates).join(', ') || '-',
+        registeredEmail: Array.from(group.registeredEmails).join(', ') || '-',
+      };
+    })
+    .sort((a, b) => b.userCount - a.userCount || a.name.localeCompare(b.name, 'th'));
   const detailedMonthlySoftwareCost = detailedSoftwareLicenses.reduce((sum, item) =>
     sum + (isAnnualSoftwareCost(item) ? 0 : Number(item.monthlyCost ?? item.price ?? 0)), 0);
   const detailedAnnualSoftwareCost = detailedSoftwareLicenses.reduce((sum, item) =>
@@ -7295,22 +7335,29 @@ function Dashboard({ currentUser, onLogout }) {
                 </div>
                 <h3>ภาพรวมผู้ใช้งานซอฟต์แวร์ทั้งหมด ({softwareUsageOverviewCards.length.toLocaleString()} โปรแกรม)</h3>
                 <div className="software-pdf-program-grid">
-                  {softwareUsageOverviewCards.map(({ item: soft, originalIndex, userCount }) => (
-                    <article className="software-pdf-program-card software-pdf-usage-card" key={`pdf-software-${originalIndex}`}>
+                  {softwareUsageOverviewCards.map((software) => (
+                    <article className="software-pdf-program-card software-pdf-usage-card" key={`pdf-software-${software.originalIndex}`}>
                       <div className="software-pdf-program-heading">
                         <div>
                           <span>ชื่อซอฟต์แวร์</span>
-                          <h4>{soft.name || '-'}</h4>
+                          <h4>{software.name}</h4>
                         </div>
                         <div className="software-pdf-user-count">
-                          <strong>{userCount.toLocaleString()}</strong>
+                          <strong>{software.userCount.toLocaleString()}</strong>
                           <span>คน</span>
                         </div>
                       </div>
                       <div className="software-pdf-user-list">
                         <span>ผู้ใช้งาน</span>
-                        <strong>{soft.currentUsers || 'ยังไม่ระบุรายชื่อผู้ใช้งาน'}</strong>
+                        <strong>{software.userNames}</strong>
                       </div>
+                      <dl className="software-pdf-usage-meta">
+                        <div><dt>ราคา</dt><dd>{formatThaiBaht(software.price)}</dd></div>
+                        <div><dt>ช่องทางชำระ</dt><dd>{software.paymentChannel}</dd></div>
+                        <div><dt>ประเภท</dt><dd>{software.billingType}</dd></div>
+                        <div><dt>วันหมดสัญญา</dt><dd>{software.expiryDate}</dd></div>
+                        <div className="email"><dt>อีเมลสมัคร</dt><dd>{software.registeredEmail}</dd></div>
+                      </dl>
                     </article>
                   ))}
                 </div>
