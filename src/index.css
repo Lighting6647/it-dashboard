@@ -4471,6 +4471,14 @@ html, body, #root {
     font-size: 0.72rem;
     color: #475569;
 }
+.pdf-asset-kpi-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    margin-bottom: 14px;
+}
+.pdf-asset-summary-table th:not(:first-child),
+.pdf-asset-summary-table td:not(:first-child) {
+    width: 11%;
+}
 .pdf-table {
     width: 100%;
     border-collapse: collapse;
@@ -4645,6 +4653,19 @@ html, body, #root {
         box-shadow: none !important;
         padding: 0 !important;
         max-width: 100% !important;
+    }
+    .pdf-kpi-grid,
+    .pdf-kpi-box,
+    .pdf-table tr {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+    .pdf-section-title {
+        break-after: avoid;
+        page-break-after: avoid;
+    }
+    .pdf-asset-kpi-grid {
+        grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
     }
     .modal-header,
     .no-print,

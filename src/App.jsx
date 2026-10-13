@@ -8487,6 +8487,19 @@ function Dashboard({ currentUser, onLogout }) {
       const totalPendingPurchasePrice = pendingPurchaseRequests.reduce((sum, request) => sum + Number(request.estimated_price || 0), 0);
       const securityIncidents = Number(activeData.securityIncidents || 0);
       const securityScore = Math.max(70, 100 - (securityIncidents * 10));
+      const assetCategoryRows = registryAssetBreakdown.map((category) => {
+        const categoryAssets = assetsList.filter(asset => getRegistryAssetCategory(asset.itemType) === category.label);
+        const countStatus = (status) => categoryAssets.filter(asset => normalizeAssetStatus(asset.status) === status).length;
+        return {
+          label: category.label,
+          total: category.count,
+          active: countStatus('ใช้งาน'),
+          vacant: countStatus('ว่าง'),
+          broken: categoryAssets.filter(asset => ['รอซ่อม', 'ชำรุด'].includes(normalizeAssetStatus(asset.status))).length,
+          lost: countStatus('สูญหาย'),
+        };
+      });
+      const registryActiveCount = assetCategoryRows.reduce((sum, category) => sum + category.active, 0);
 
       return (
         <div className="modal-overlay active pdf-report-overlay">
@@ -8555,7 +8568,72 @@ function Dashboard({ currentUser, onLogout }) {
                 </div>
 
                 <div className="pdf-section">
-                  <h3 className="pdf-section-title">2. รายละเอียดงบประมาณและค่าใช้จ่ายซ่อมแซม (IT Repair Expense Analytics)</h3>
+                  <h3 className="pdf-section-title">2. สรุปทะเบียนคลังทรัพย์สินและอุปกรณ์ IT (Asset Registry)</h3>
+                  <div className="pdf-kpi-grid pdf-asset-kpi-grid">
+                    <div className="pdf-kpi-box">
+                      <span className="pdf-kpi-label">อุปกรณ์ทั้งหมด</span>
+                      <strong className="pdf-kpi-value">{assetsList.length} เครื่อง</strong>
+                      <small>{assetCategoryRows.length} ประเภทอุปกรณ์</small>
+                    </div>
+                    <div className="pdf-kpi-box">
+                      <span className="pdf-kpi-label">เครื่องว่าง (พร้อมใช้)</span>
+                      <strong className="pdf-kpi-value">{vacantStockCount} เครื่อง</strong>
+                      <small>พร้อมเบิกและส่งมอบ</small>
+                    </div>
+                    <div className="pdf-kpi-box">
+                      <span className="pdf-kpi-label">ใกล้หมดอายุ</span>
+                      <strong className="pdf-kpi-value">{expiringAssetEntries.length} เครื่อง</strong>
+                      <small>Notebook/PC อายุ 3 ปี อ้างอิงปีผลิต</small>
+                    </div>
+                    <div className="pdf-kpi-box">
+                      <span className="pdf-kpi-label">ชำรุด / สูญหาย</span>
+                      <strong className="pdf-kpi-value">{warehouseBrokenCount} / {warehouseLostCount} เครื่อง</strong>
+                      <small>ตามสถานะปัจจุบันในทะเบียนคลัง</small>
+                    </div>
+                    <div className="pdf-kpi-box">
+                      <span className="pdf-kpi-label">มูลค่าทรัพย์สิน IT รวม</span>
+                      <strong className="pdf-kpi-value">{formatThaiBaht(calculatedAssetValue)}</strong>
+                      <small>จากอุปกรณ์ที่มีราคาอ้างอิง {pricedAssets.length} เครื่อง</small>
+                    </div>
+                  </div>
+                  <table className="pdf-table pdf-asset-summary-table">
+                    <thead>
+                      <tr>
+                        <th>ประเภทอุปกรณ์</th>
+                        <th style={{ textAlign: 'center' }}>ทั้งหมด</th>
+                        <th style={{ textAlign: 'center' }}>ใช้งาน</th>
+                        <th style={{ textAlign: 'center' }}>ว่าง</th>
+                        <th style={{ textAlign: 'center' }}>ชำรุด</th>
+                        <th style={{ textAlign: 'center' }}>สูญหาย</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {assetCategoryRows.map(category => (
+                        <tr key={category.label}>
+                          <td><strong>{category.label}</strong></td>
+                          <td style={{ textAlign: 'center' }}>{category.total}</td>
+                          <td style={{ textAlign: 'center' }}>{category.active}</td>
+                          <td style={{ textAlign: 'center' }}>{category.vacant}</td>
+                          <td style={{ textAlign: 'center' }}>{category.broken}</td>
+                          <td style={{ textAlign: 'center' }}>{category.lost}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <td><strong>รวมทั้งสิ้น</strong></td>
+                        <td style={{ textAlign: 'center' }}><strong>{assetsList.length}</strong></td>
+                        <td style={{ textAlign: 'center' }}><strong>{registryActiveCount}</strong></td>
+                        <td style={{ textAlign: 'center' }}><strong>{vacantStockCount}</strong></td>
+                        <td style={{ textAlign: 'center' }}><strong>{warehouseBrokenCount}</strong></td>
+                        <td style={{ textAlign: 'center' }}><strong>{warehouseLostCount}</strong></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+
+                <div className="pdf-section">
+                  <h3 className="pdf-section-title">3. รายละเอียดงบประมาณและค่าใช้จ่ายซ่อมแซม (IT Repair Expense Analytics)</h3>
                   <table className="pdf-table">
                     <thead>
                       <tr>
@@ -8595,7 +8673,7 @@ function Dashboard({ currentUser, onLogout }) {
                 </div>
 
                 <div className="pdf-section">
-                  <h3 className="pdf-section-title">3. รายการรอสั่งซื้ออุปกรณ์ (Pending Purchase Requests)</h3>
+                  <h3 className="pdf-section-title">4. รายการรอสั่งซื้ออุปกรณ์ (Pending Purchase Requests)</h3>
                   <table className="pdf-table">
                     <thead>
                       <tr>
@@ -8633,7 +8711,7 @@ function Dashboard({ currentUser, onLogout }) {
                 </div>
 
                 <div className="pdf-section">
-                  <h3 className="pdf-section-title">4. ข้อเสนอแนะและแผนงานปรับปรุง (IT Recommendations)</h3>
+                  <h3 className="pdf-section-title">5. ข้อเสนอแนะและแผนงานปรับปรุง (IT Recommendations)</h3>
                   <ul className="pdf-list">
                     {activeData.recommendations && activeData.recommendations.length > 0 ? (
                       activeData.recommendations.map((rec, idx) => <li key={idx}>{rec}</li>)
