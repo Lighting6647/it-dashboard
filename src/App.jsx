@@ -8608,15 +8608,15 @@ function Dashboard({ currentUser, onLogout }) {
 
     {/* MODAL 9: MONTHLY PDF EXECUTIVE SUMMARY REPORT */}
     {activeModal === 'pdfReport' && (() => {
-      const tickets = activeData.ticketsList || data[currentMonth]?.ticketsList || [];
+      const tickets = activeData?.ticketsList || data?.[currentMonth]?.ticketsList || [];
       const ticketsWithCost = tickets.filter(ticket => Number(ticket.cost || ticket.repairCost || ticket.price || 0) > 0);
       const totalRepairExpense = ticketsWithCost.reduce((sum, ticket) => sum + Number(ticket.cost || ticket.repairCost || ticket.price || 0), 0);
-      const pendingPurchaseRequests = assetRequests.filter(request => ['pending', 'need_info'].includes(request.status) && !request.assigned_asset_sn);
+      const pendingPurchaseRequests = (assetRequests || []).filter(request => ['pending', 'need_info'].includes(request.status) && !request.assigned_asset_sn);
       const totalPendingPurchasePrice = pendingPurchaseRequests.reduce((sum, request) => sum + Number(request.estimated_price || 0), 0);
-      const securityIncidents = Number(activeData.securityIncidents || 0);
+      const securityIncidents = Number(activeData?.securityIncidents || 0);
       const securityScore = Math.max(70, 100 - (securityIncidents * 10));
-      const assetCategoryRows = registryAssetBreakdown.map((category) => {
-        const categoryAssets = assetsList.filter(asset => getRegistryAssetCategory(asset.itemType) === category.label);
+      const assetCategoryRows = (registryAssetBreakdown || []).map((category) => {
+        const categoryAssets = (assetsList || []).filter(asset => getRegistryAssetCategory(asset.itemType) === category.label);
         const countStatus = (status) => categoryAssets.filter(asset => normalizeAssetStatus(asset.status) === status).length;
         return {
           label: category.label,
@@ -8628,13 +8628,14 @@ function Dashboard({ currentUser, onLogout }) {
         };
       });
       const registryActiveCount = assetCategoryRows.reduce((sum, category) => sum + category.active, 0);
+      const expiringAssetList = primaryExpiringAssetDetails || [];
 
       return (
         <div className="modal-overlay active pdf-report-overlay">
           <div className="modal large" style={{ width: '100%', maxWidth: '1050px', background: 'transparent', boxShadow: 'none' }}>
             <header className="modal-header no-print" style={{ background: '#0f172a', padding: '12px 20px', borderRadius: '12px 12px 0 0' }}>
               <h3 style={{ color: 'white', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                📄 รายงานสรุปผลการดำเนินงานด้านไอทีประจำเดือน ({activeData.monthName})
+                📄 รายงานสรุปผลการดำเนินงานด้านไอทีประจำเดือน ({activeData?.monthName || currentMonth})
               </h3>
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button
@@ -8658,7 +8659,7 @@ function Dashboard({ currentUser, onLogout }) {
                     </div>
                   </div>
                   <div className="pdf-report-meta">
-                    <div><strong>ประจำเดือน:</strong> {activeData.monthName}</div>
+                    <div><strong>ประจำเดือน:</strong> {activeData?.monthName || currentMonth}</div>
                     <div><strong>วันที่ออกรายงาน:</strong> {new Date().toLocaleDateString('th-TH')}</div>
                     <div><strong>ระดับความปลอดภัย:</strong> ปกติ (Security Score: {securityScore}%)</div>
                   </div>
@@ -8669,13 +8670,13 @@ function Dashboard({ currentUser, onLogout }) {
                   <div className="pdf-kpi-grid">
                     <div className="pdf-kpi-box">
                       <span className="pdf-kpi-label">ทรัพย์สิน IT ในระบบ</span>
-                      <strong className="pdf-kpi-value">{activeData.totalAssets} เครื่อง</strong>
-                      <small>มูลค่ารวม {formatThaiBaht(activeData.assetValue)}</small>
+                      <strong className="pdf-kpi-value">{activeData?.totalAssets ?? assetsList?.length ?? 0} เครื่อง</strong>
+                      <small>มูลค่ารวม {formatThaiBaht(activeData?.assetValue || calculatedAssetValue || 0)}</small>
                     </div>
                     <div className="pdf-kpi-box">
                       <span className="pdf-kpi-label">งานบริการ Support</span>
-                      <strong className="pdf-kpi-value">{activeData.ticketsCount} ใบงาน</strong>
-                      <small>SLA {activeData.slaPercent}% · ตอบกลับ {activeData.responseTime} นาที</small>
+                      <strong className="pdf-kpi-value">{activeData?.ticketsCount ?? tickets.length} ใบงาน</strong>
+                      <small>SLA {activeData?.slaPercent ?? 100}% · ตอบกลับ {activeData?.responseTime ?? 15} นาที</small>
                     </div>
                     <div className="pdf-kpi-box">
                       <span className="pdf-kpi-label">ค่าใช้จ่ายซ่อมบำรุงรวม</span>
@@ -8684,8 +8685,8 @@ function Dashboard({ currentUser, onLogout }) {
                     </div>
                     <div className="pdf-kpi-box">
                       <span className="pdf-kpi-label">อุปกรณ์พร้อมใช้ / ชำรุด</span>
-                      <strong className="pdf-kpi-value">{activeData.assetsVacant} / {activeData.assetsBroken} เครื่อง</strong>
-                      <small>ใกล้หมดอายุ {activeData.assetsExpiring} เครื่อง</small>
+                      <strong className="pdf-kpi-value">{activeData?.assetsVacant ?? vacantStockCount} / {activeData?.assetsBroken ?? warehouseBrokenCount} เครื่อง</strong>
+                      <small>ใกล้หมดอายุ {activeData?.assetsExpiring ?? expiringAssetList.length} เครื่อง</small>
                     </div>
                     <div className="pdf-kpi-box">
                       <span className="pdf-kpi-label">รายการรอสั่งซื้อ</span>
@@ -8700,7 +8701,7 @@ function Dashboard({ currentUser, onLogout }) {
                   <div className="pdf-kpi-grid pdf-asset-kpi-grid">
                     <div className="pdf-kpi-box">
                       <span className="pdf-kpi-label">อุปกรณ์ทั้งหมด</span>
-                      <strong className="pdf-kpi-value">{assetsList.length} เครื่อง</strong>
+                      <strong className="pdf-kpi-value">{assetsList?.length || 0} เครื่อง</strong>
                       <small>{assetCategoryRows.length} ประเภทอุปกรณ์</small>
                     </div>
                     <div className="pdf-kpi-box">
@@ -8710,7 +8711,7 @@ function Dashboard({ currentUser, onLogout }) {
                     </div>
                     <div className="pdf-kpi-box">
                       <span className="pdf-kpi-label">ใกล้หมดอายุ</span>
-                      <strong className="pdf-kpi-value">{expiringAssetEntries.length} เครื่อง</strong>
+                      <strong className="pdf-kpi-value">{expiringAssetList.length} เครื่อง</strong>
                       <small>Notebook/PC อายุ 3 ปี อ้างอิงปีผลิต</small>
                     </div>
                     <div className="pdf-kpi-box">
@@ -8721,7 +8722,7 @@ function Dashboard({ currentUser, onLogout }) {
                     <div className="pdf-kpi-box">
                       <span className="pdf-kpi-label">มูลค่าทรัพย์สิน IT รวม</span>
                       <strong className="pdf-kpi-value">{formatThaiBaht(calculatedAssetValue)}</strong>
-                      <small>จากอุปกรณ์ที่มีราคาอ้างอิง {pricedAssets.length} เครื่อง</small>
+                      <small>จากอุปกรณ์ที่มีราคาอ้างอิง {pricedAssets?.length || 0} เครื่อง</small>
                     </div>
                   </div>
                   <table className="pdf-table pdf-asset-summary-table">
@@ -8750,7 +8751,7 @@ function Dashboard({ currentUser, onLogout }) {
                     <tfoot>
                       <tr>
                         <td><strong>รวมทั้งสิ้น</strong></td>
-                        <td style={{ textAlign: 'center' }}><strong>{assetsList.length}</strong></td>
+                        <td style={{ textAlign: 'center' }}><strong>{assetsList?.length || 0}</strong></td>
                         <td style={{ textAlign: 'center' }}><strong>{registryActiveCount}</strong></td>
                         <td style={{ textAlign: 'center' }}><strong>{vacantStockCount}</strong></td>
                         <td style={{ textAlign: 'center' }}><strong>{warehouseBrokenCount}</strong></td>
@@ -8778,12 +8779,12 @@ function Dashboard({ currentUser, onLogout }) {
                       {ticketsWithCost.length > 0 ? (
                         ticketsWithCost.map((ticket, idx) => (
                           <tr key={idx}>
-                            <td><strong>#{ticket.sn}</strong></td>
-                            <td>{ticket.date}</td>
-                            <td>{ticket.complainant}</td>
-                            <td>{ticket.issue}</td>
-                            <td>{ticket.responder}</td>
-                            <td>{ticket.status}</td>
+                            <td><strong>#{ticket.sn || ticket.id || idx + 1}</strong></td>
+                            <td>{ticket.date || '-'}</td>
+                            <td>{ticket.complainant || '-'}</td>
+                            <td>{ticket.issue || '-'}</td>
+                            <td>{ticket.responder || '-'}</td>
+                            <td>{ticket.status || '-'}</td>
                             <td style={{ textAlign: 'right' }}><strong>{formatThaiBaht(ticket.cost || ticket.repairCost || ticket.price || 0)}</strong></td>
                           </tr>
                         ))
@@ -8817,10 +8818,10 @@ function Dashboard({ currentUser, onLogout }) {
                     <tbody>
                       {pendingPurchaseRequests.length > 0 ? pendingPurchaseRequests.map(request => (
                         <tr key={request.id}>
-                          <td><strong>#{request.id}</strong></td>
+                          <td><strong>#{request.id || '-'}</strong></td>
                           <td>{request.requested_date ? String(request.requested_date).slice(0, 10) : '-'}</td>
-                          <td>{request.requester}<br /><small>{request.department}</small></td>
-                          <td>{request.item_type}</td>
+                          <td>{request.requester || '-'}<br /><small>{request.department || '-'}</small></td>
+                          <td>{request.item_type || '-'}</td>
                           <td>{request.purpose || '-'}</td>
                           <td>{request.status === 'need_info' ? 'รอข้อมูลเพิ่ม' : 'รออนุมัติ/สั่งซื้อ'}</td>
                           <td style={{ textAlign: 'right' }}><strong>{formatThaiBaht(request.estimated_price || 0)}</strong></td>
@@ -8841,7 +8842,7 @@ function Dashboard({ currentUser, onLogout }) {
                 <div className="pdf-section">
                   <h3 className="pdf-section-title">5. ข้อเสนอแนะและแผนงานปรับปรุง (IT Recommendations)</h3>
                   <ul className="pdf-list">
-                    {activeData.recommendations && activeData.recommendations.length > 0 ? (
+                    {activeData?.recommendations && activeData.recommendations.length > 0 ? (
                       activeData.recommendations.map((rec, idx) => <li key={idx}>{rec}</li>)
                     ) : (
                       <li>ระบบทำงานอยู่ในเกณฑ์ปกติ ไม่มีข้อเสนอแนะเพิ่มเติมสำหรับเดือนนี้</li>
