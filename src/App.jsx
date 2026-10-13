@@ -7351,13 +7351,6 @@ function Dashboard({ currentUser, onLogout }) {
                         <span>ผู้ใช้งาน</span>
                         <strong>{software.userNames}</strong>
                       </div>
-                      <dl className="software-pdf-usage-meta">
-                        <div><dt>ราคา</dt><dd>{formatThaiBaht(software.price)}</dd></div>
-                        <div><dt>ช่องทางชำระ</dt><dd>{software.paymentChannel}</dd></div>
-                        <div><dt>ประเภท</dt><dd>{software.billingType}</dd></div>
-                        <div><dt>วันหมดสัญญา</dt><dd>{software.expiryDate}</dd></div>
-                        <div className="email"><dt>อีเมลสมัคร</dt><dd>{software.registeredEmail}</dd></div>
-                      </dl>
                     </article>
                   ))}
                 </div>

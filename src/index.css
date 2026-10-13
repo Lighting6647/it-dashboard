@@ -4903,7 +4903,7 @@ html, body, #root {
         white-space: normal;
     }
     body.printing-software-license .software-pdf-usage-card {
-        min-height: 190px;
+        min-height: 118px;
     }
     body.printing-software-license .software-pdf-usage-card .software-pdf-program-heading {
         align-items: center;
@@ -4941,38 +4941,6 @@ html, body, #root {
         color: #1e293b !important;
         font-size: 7.5pt;
         line-height: 1.35;
-        overflow-wrap: anywhere;
-    }
-    body.printing-software-license .software-pdf-usage-meta {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        margin: 0;
-        border-top: 1px solid #e2e8f0;
-    }
-    body.printing-software-license .software-pdf-usage-meta > div {
-        min-width: 0;
-        padding: 5px 7px;
-        border-right: 1px solid #e2e8f0;
-        border-bottom: 1px solid #e2e8f0;
-    }
-    body.printing-software-license .software-pdf-usage-meta > div:nth-child(even) {
-        border-right: 0;
-    }
-    body.printing-software-license .software-pdf-usage-meta > div.email {
-        grid-column: 1 / -1;
-        border-right: 0;
-    }
-    body.printing-software-license .software-pdf-usage-meta dt {
-        margin-bottom: 2px;
-        color: #64748b !important;
-        font-size: 6.2pt;
-        font-weight: 600;
-    }
-    body.printing-software-license .software-pdf-usage-meta dd {
-        margin: 0;
-        color: #1e293b !important;
-        font-size: 6.8pt;
-        line-height: 1.25;
         overflow-wrap: anywhere;
     }
     body.printing-software-license .details-table {
