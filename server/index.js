@@ -716,6 +716,21 @@ async function initDb() {
         )
       `);
       await client.query(`ALTER TABLE asset_requests ADD COLUMN IF NOT EXISTS estimated_price NUMERIC(12, 2) NOT NULL DEFAULT 0`);
+      // Older ticket handling marked the linked checkout as a broken return
+      // automatically. A repair report is not an asset-return inspection, so
+      // remove only the condition values that can be traced to that automatic
+      // ticket event. Keep the historical request and return date intact.
+      await client.query(`
+        UPDATE asset_requests r
+        SET return_condition = NULL,
+            updated_at = NOW()
+        WHERE r.return_condition = 'ชำรุด'
+          AND EXISTS (
+            SELECT 1
+            FROM jsonb_array_elements(COALESCE(r.history, '[]'::jsonb)) AS event
+            WHERE event->>'note' LIKE 'ส่งเครื่องเข้าซ่อมจากใบแจ้งปัญหา #%'
+          )
+      `);
       await client.query(`
         CREATE UNIQUE INDEX IF NOT EXISTS asset_requests_one_active_asset
         ON asset_requests (assigned_asset_sn)
@@ -961,17 +976,14 @@ app.post('/api/tickets', requireRole('staff'), async (req, res) => {
       `, [linkedAssetSn]);
       for (const request of activeRequests.rows) {
         const event = {
-          status: 'returned',
+          status: 'repair_reported',
           at: new Date().toISOString(),
           by: String(name).trim(),
           note: `ส่งเครื่องเข้าซ่อมจากใบแจ้งปัญหา #${nextSn}`
         };
         await client.query(`
           UPDATE asset_requests
-          SET status = 'returned',
-              return_date = NOW(),
-              return_condition = 'ชำรุด',
-              history = $1,
+          SET history = $1,
               updated_at = NOW()
           WHERE id = $2
         `, [JSON.stringify([...(request.history || []), event]), request.id]);
