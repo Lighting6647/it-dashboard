@@ -3816,8 +3816,7 @@ function Dashboard({ currentUser, onLogout }) {
         String(item.currentUsers || '').split(/[,;\n]+/).map(name => name.trim()).filter(Boolean).length,
       ),
     }))
-    .sort((a, b) => b.userCount - a.userCount || String(a.item.name || '').localeCompare(String(b.item.name || ''), 'th'))
-    .slice(0, 4);
+    .sort((a, b) => b.userCount - a.userCount || String(a.item.name || '').localeCompare(String(b.item.name || ''), 'th'));
   const detailedMonthlySoftwareCost = detailedSoftwareLicenses.reduce((sum, item) =>
     sum + (isAnnualSoftwareCost(item) ? 0 : Number(item.monthlyCost ?? item.price ?? 0)), 0);
   const detailedAnnualSoftwareCost = detailedSoftwareLicenses.reduce((sum, item) =>
@@ -7294,7 +7293,7 @@ function Dashboard({ currentUser, onLogout }) {
                     <div className="software-pdf-progress"><span style={{ width: `${Math.min(filteredSoftwareUtilization, 100)}%` }} /></div>
                   </div>
                 </div>
-                <h3>ภาพรวมผู้ใช้งานซอฟต์แวร์ (สูงสุด 4 รายการ)</h3>
+                <h3>ภาพรวมผู้ใช้งานซอฟต์แวร์ทั้งหมด ({softwareUsageOverviewCards.length.toLocaleString()} โปรแกรม)</h3>
                 <div className="software-pdf-program-grid">
                   {softwareUsageOverviewCards.map(({ item: soft, originalIndex, userCount }) => (
                     <article className="software-pdf-program-card software-pdf-usage-card" key={`pdf-software-${originalIndex}`}>
