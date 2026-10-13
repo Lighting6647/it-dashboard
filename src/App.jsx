@@ -3807,6 +3807,17 @@ function Dashboard({ currentUser, onLogout }) {
   const filteredSoftwareUtilization = filteredSoftwareLicenseTotal > 0
     ? Math.round((filteredSoftwareUsed / filteredSoftwareLicenseTotal) * 100)
     : 0;
+  const softwareUsageOverviewCards = filteredSoftwareLicenses
+    .map(({ item, originalIndex }) => ({
+      item,
+      originalIndex,
+      userCount: Math.max(
+        Number(item.used || 0),
+        String(item.currentUsers || '').split(/[,;\n]+/).map(name => name.trim()).filter(Boolean).length,
+      ),
+    }))
+    .sort((a, b) => b.userCount - a.userCount || String(a.item.name || '').localeCompare(String(b.item.name || ''), 'th'))
+    .slice(0, 4);
   const detailedMonthlySoftwareCost = detailedSoftwareLicenses.reduce((sum, item) =>
     sum + (isAnnualSoftwareCost(item) ? 0 : Number(item.monthlyCost ?? item.price ?? 0)), 0);
   const detailedAnnualSoftwareCost = detailedSoftwareLicenses.reduce((sum, item) =>
@@ -7283,38 +7294,26 @@ function Dashboard({ currentUser, onLogout }) {
                     <div className="software-pdf-progress"><span style={{ width: `${Math.min(filteredSoftwareUtilization, 100)}%` }} /></div>
                   </div>
                 </div>
-                <h3>รายละเอียดทะเบียนโปรแกรมและ License</h3>
+                <h3>ภาพรวมผู้ใช้งานซอฟต์แวร์ (สูงสุด 4 รายการ)</h3>
                 <div className="software-pdf-program-grid">
-                  {filteredSoftwareLicenses.map(({ item: soft, originalIndex }) => {
-                    const licenseTotal = soft.licenses ?? (Number(soft.used || 0) + Number(soft.vacant || 0));
-                    return (
-                      <article className="software-pdf-program-card" key={`pdf-software-${originalIndex}`}>
-                        <div className="software-pdf-program-heading">
-                          <div>
-                            <span>ซอฟต์แวร์ / โปรแกรม</span>
-                            <h4>{soft.name || '-'}</h4>
-                          </div>
-                          <div className="software-pdf-price">
-                            <span>ราคา</span>
-                            <strong>{formatThaiBaht(soft.monthlyCost ?? soft.price ?? 0)}</strong>
-                          </div>
+                  {softwareUsageOverviewCards.map(({ item: soft, originalIndex, userCount }) => (
+                    <article className="software-pdf-program-card software-pdf-usage-card" key={`pdf-software-${originalIndex}`}>
+                      <div className="software-pdf-program-heading">
+                        <div>
+                          <span>ชื่อซอฟต์แวร์</span>
+                          <h4>{soft.name || '-'}</h4>
                         </div>
-                        <div className="software-pdf-owner"><span>Owner</span><strong>{soft.owner || '-'}</strong></div>
-                        <div className="software-pdf-license-metrics">
-                          <div><span>ใช้งาน</span><strong>{Number(soft.used || 0).toLocaleString()}</strong></div>
-                          <div><span>ว่าง</span><strong>{Number(soft.vacant || 0).toLocaleString()}</strong></div>
-                          <div><span>รวม</span><strong>{Number(licenseTotal || 0).toLocaleString()}</strong></div>
+                        <div className="software-pdf-user-count">
+                          <strong>{userCount.toLocaleString()}</strong>
+                          <span>คน</span>
                         </div>
-                        <dl className="software-pdf-program-details">
-                          <div><dt>ช่องทางชำระ</dt><dd>{soft.paymentChannel || '-'}</dd></div>
-                          <div><dt>ประเภท</dt><dd>{soft.paymentDate || '-'}</dd></div>
-                          <div><dt>วันหมดสัญญา</dt><dd>{soft.expiringDate || '-'}</dd></div>
-                          <div><dt>อีเมลสมัคร</dt><dd>{soft.registeredEmail || '-'}</dd></div>
-                          <div className="users"><dt>ผู้ใช้งานปัจจุบัน</dt><dd>{soft.currentUsers || '-'}</dd></div>
-                        </dl>
-                      </article>
-                    );
-                  })}
+                      </div>
+                      <div className="software-pdf-user-list">
+                        <span>ผู้ใช้งาน</span>
+                        <strong>{soft.currentUsers || 'ยังไม่ระบุรายชื่อผู้ใช้งาน'}</strong>
+                      </div>
+                    </article>
+                  ))}
                 </div>
               </div>
               <div className="software-license-toolbar">
