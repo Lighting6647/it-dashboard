@@ -4681,13 +4681,115 @@ html, body, #root {
     body.printing-software-license .software-print-header {
         display: block !important;
         margin: 0 0 14px;
-        padding-bottom: 10px;
-        border-bottom: 2px solid #2563eb;
         color: #0f172a;
     }
-    body.printing-software-license .software-print-header h2,
-    body.printing-software-license .software-print-header p {
-        margin: 0 0 4px;
+    body.printing-software-license .software-pdf-title-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        padding: 14px 18px;
+        border-radius: 10px;
+        background: linear-gradient(125deg, #172554, #0f4c81) !important;
+        color: #ffffff !important;
+    }
+    body.printing-software-license .software-pdf-eyebrow {
+        font-size: 7.5pt;
+        font-weight: 700;
+        letter-spacing: .08em;
+        color: #93c5fd !important;
+    }
+    body.printing-software-license .software-pdf-title-row h2 {
+        margin: 3px 0 2px;
+        font-size: 18pt;
+        color: #ffffff !important;
+    }
+    body.printing-software-license .software-pdf-title-row p {
+        margin: 0;
+        font-size: 8.5pt;
+        color: #dbeafe !important;
+    }
+    body.printing-software-license .software-pdf-issued {
+        display: grid;
+        gap: 2px;
+        text-align: right;
+        font-size: 8pt;
+        color: #dbeafe !important;
+    }
+    body.printing-software-license .software-pdf-kpis {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 8px;
+        margin: 10px 0 8px;
+    }
+    body.printing-software-license .software-pdf-kpis > div {
+        display: grid;
+        gap: 2px;
+        min-height: 58px;
+        padding: 9px 10px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        background: #f8fafc !important;
+    }
+    body.printing-software-license .software-pdf-kpis span,
+    body.printing-software-license .software-pdf-kpis small {
+        font-size: 7.5pt;
+        color: #64748b !important;
+    }
+    body.printing-software-license .software-pdf-kpis strong {
+        font-size: 13pt;
+        color: #0f4c81 !important;
+    }
+    body.printing-software-license .software-pdf-billing-summary {
+        display: grid;
+        grid-template-columns: 145px 145px minmax(240px, 1fr);
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+    body.printing-software-license .software-pdf-billing-card,
+    body.printing-software-license .software-pdf-utilization {
+        padding: 8px 10px;
+        border: 1px solid #bfdbfe;
+        border-radius: 8px;
+        background: #eff6ff !important;
+        color: #1e3a8a !important;
+    }
+    body.printing-software-license .software-pdf-billing-card {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 8pt;
+    }
+    body.printing-software-license .software-pdf-billing-card.yearly {
+        border-color: #a7f3d0;
+        background: #ecfdf5 !important;
+        color: #065f46 !important;
+    }
+    body.printing-software-license .software-pdf-utilization-label {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5px;
+        font-size: 8pt;
+    }
+    body.printing-software-license .software-pdf-progress {
+        height: 7px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: #cbd5e1 !important;
+    }
+    body.printing-software-license .software-pdf-progress span {
+        display: block;
+        height: 100%;
+        border-radius: inherit;
+        background: #2563eb !important;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+    }
+    body.printing-software-license .software-print-header > h3 {
+        margin: 0 0 6px;
+        padding-bottom: 5px;
+        border-bottom: 1px solid #cbd5e1;
+        color: #0f172a !important;
+        font-size: 10pt;
     }
     body.printing-software-license .details-table {
         width: 100% !important;

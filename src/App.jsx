@@ -3796,6 +3796,17 @@ function Dashboard({ currentUser, onLogout }) {
     (sum, { item }) => sum + Number(item.monthlyCost ?? item.price ?? 0),
     0,
   );
+  const filteredSoftwareUsed = filteredSoftwareLicenses.reduce((sum, { item }) => sum + Number(item.used || 0), 0);
+  const filteredSoftwareVacant = filteredSoftwareLicenses.reduce((sum, { item }) => sum + Number(item.vacant || 0), 0);
+  const filteredSoftwareLicenseTotal = filteredSoftwareLicenses.reduce(
+    (sum, { item }) => sum + Number(item.licenses ?? (Number(item.used || 0) + Number(item.vacant || 0))),
+    0,
+  );
+  const filteredSoftwareMonthlyCount = filteredSoftwareLicenses.filter(({ item }) => !isAnnualSoftwareCost(item)).length;
+  const filteredSoftwareYearlyCount = filteredSoftwareLicenses.length - filteredSoftwareMonthlyCount;
+  const filteredSoftwareUtilization = filteredSoftwareLicenseTotal > 0
+    ? Math.round((filteredSoftwareUsed / filteredSoftwareLicenseTotal) * 100)
+    : 0;
   const detailedMonthlySoftwareCost = detailedSoftwareLicenses.reduce((sum, item) =>
     sum + (isAnnualSoftwareCost(item) ? 0 : Number(item.monthlyCost ?? item.price ?? 0)), 0);
   const detailedAnnualSoftwareCost = detailedSoftwareLicenses.reduce((sum, item) =>
@@ -7237,9 +7248,42 @@ function Dashboard({ currentUser, onLogout }) {
                 </div>
               </form>}
               <div className="software-print-header">
-                <h2>ทะเบียนโปรแกรมและ License</h2>
-                <p>ประจำเดือน {activeData.monthName} · ประเภท {softwareBillingFilter === 'monthly' ? 'รายเดือน' : softwareBillingFilter === 'yearly' ? 'รายปี' : 'ทั้งหมด'}</p>
-                <p>จำนวน {filteredSoftwareLicenses.length.toLocaleString()} รายการ · รวมราคา {formatThaiBaht(filteredSoftwareTotalCost)}</p>
+                <div className="software-pdf-title-row">
+                  <div>
+                    <span className="software-pdf-eyebrow">FERN AESTHETIQUE · IT OPERATIONS</span>
+                    <h2>Software &amp; License Dashboard</h2>
+                    <p>ประจำเดือน {activeData.monthName} · ประเภท {softwareBillingFilter === 'monthly' ? 'รายเดือน' : softwareBillingFilter === 'yearly' ? 'รายปี' : 'ทั้งหมด'}</p>
+                  </div>
+                  <div className="software-pdf-issued">
+                    <strong>วันที่ออกรายงาน</strong>
+                    <span>{new Date().toLocaleDateString('th-TH')}</span>
+                  </div>
+                </div>
+                <div className="software-pdf-kpis">
+                  <div><span>โปรแกรมทั้งหมด</span><strong>{filteredSoftwareLicenses.length.toLocaleString()}</strong><small>รายการ</small></div>
+                  <div><span>License รวม</span><strong>{filteredSoftwareLicenseTotal.toLocaleString()}</strong><small>Core/User</small></div>
+                  <div><span>ใช้งาน</span><strong>{filteredSoftwareUsed.toLocaleString()}</strong><small>{filteredSoftwareUtilization}% ของ License</small></div>
+                  <div><span>ว่าง</span><strong>{filteredSoftwareVacant.toLocaleString()}</strong><small>Core/User</small></div>
+                  <div><span>รวมราคา</span><strong>{formatThaiBaht(filteredSoftwareTotalCost)}</strong><small>ตามรายการที่แสดง</small></div>
+                </div>
+                <div className="software-pdf-billing-summary">
+                  <div className="software-pdf-billing-card monthly">
+                    <span>รายเดือน</span>
+                    <strong>{filteredSoftwareMonthlyCount.toLocaleString()} โปรแกรม</strong>
+                  </div>
+                  <div className="software-pdf-billing-card yearly">
+                    <span>รายปี</span>
+                    <strong>{filteredSoftwareYearlyCount.toLocaleString()} โปรแกรม</strong>
+                  </div>
+                  <div className="software-pdf-utilization">
+                    <div className="software-pdf-utilization-label">
+                      <span>อัตราการใช้งาน License</span>
+                      <strong>{filteredSoftwareUtilization}%</strong>
+                    </div>
+                    <div className="software-pdf-progress"><span style={{ width: `${Math.min(filteredSoftwareUtilization, 100)}%` }} /></div>
+                  </div>
+                </div>
+                <h3>รายละเอียดทะเบียนโปรแกรมและ License</h3>
               </div>
               <div className="software-license-toolbar">
                 <label className="software-license-search">
@@ -7281,7 +7325,7 @@ function Dashboard({ currentUser, onLogout }) {
                   title="เปิดหน้าต่างบันทึกไฟล์ โดยเลือก Save as PDF"
                 >
                   <Download size={16} />
-                  ดาวน์โหลด PDF
+                  ดาวน์โหลด PDF Dashboard
                 </button>
               </div>
               <div className="table-responsive" style={{ overflowX: 'auto' }}>
