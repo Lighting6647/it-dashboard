@@ -2306,7 +2306,11 @@ function Dashboard({ currentUser, onLogout }) {
   };
 
   useEffect(() => {
-    if (!['assetWorkflow', 'assetReturns'].includes(activeModal)) return undefined;
+    loadAssetRequests();
+  }, [loadAssetRequests]);
+
+  useEffect(() => {
+    if (!['assetWorkflow', 'assetReturns', 'pdfReport'].includes(activeModal)) return undefined;
     loadAssetRequests();
     const timer = setInterval(loadAssetRequests, 3000);
     return () => clearInterval(timer);
@@ -8776,7 +8780,9 @@ function Dashboard({ currentUser, onLogout }) {
       const tickets = activeData?.ticketsList || data?.[currentMonth]?.ticketsList || [];
       const ticketsWithCost = tickets.filter(ticket => Number(ticket.cost || ticket.repairCost || ticket.price || 0) > 0);
       const totalRepairExpense = ticketsWithCost.reduce((sum, ticket) => sum + Number(ticket.cost || ticket.repairCost || ticket.price || 0), 0);
-      const pendingPurchaseRequests = (assetRequests || []).filter(request => ['pending', 'need_info'].includes(request.status) && !request.assigned_asset_sn);
+      const pendingPurchaseRequests = (assetRequests || []).filter(request =>
+        ['pending', 'need_info', 'approved'].includes(request.status) && !request.assigned_asset_sn
+      );
       const totalPendingPurchasePrice = pendingPurchaseRequests.reduce((sum, request) => sum + Number(request.estimated_price || 0), 0);
       const securityIncidents = Number(activeData?.securityIncidents || 0);
       const securityScore = Math.max(70, 100 - (securityIncidents * 10));
@@ -8987,8 +8993,11 @@ function Dashboard({ currentUser, onLogout }) {
                           <td>{request.requested_date ? String(request.requested_date).slice(0, 10) : '-'}</td>
                           <td>{request.requester || '-'}<br /><small>{request.department || '-'}</small></td>
                           <td>{request.item_type || '-'}</td>
-                          <td>{request.purpose || '-'}</td>
-                          <td>{request.status === 'need_info' ? 'รอข้อมูลเพิ่ม' : 'รออนุมัติ/สั่งซื้อ'}</td>
+                          <td>
+                            {request.purpose || '-'}
+                            {request.notes ? <><br /><small>หมายเหตุ: {request.notes}</small></> : null}
+                          </td>
+                          <td>{({ pending: 'รออนุมัติ/สั่งซื้อ', need_info: 'รอข้อมูลเพิ่ม', approved: 'อนุมัติแล้ว รอจัดสรร' })[request.status] || request.status}</td>
                           <td style={{ textAlign: 'right' }}><strong>{formatThaiBaht(request.estimated_price || 0)}</strong></td>
                         </tr>
                       )) : (
