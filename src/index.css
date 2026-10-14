@@ -5119,6 +5119,151 @@ html, body, #root {
         line-height: 1.35;
         overflow-wrap: anywhere;
     }
+    /* Compact the complete filtered dashboard toward a single A4 landscape page. */
+    body.printing-software-license .software-print-header {
+        margin-bottom: 0;
+    }
+    body.printing-software-license .software-pdf-title-row {
+        padding-bottom: 3px;
+    }
+    body.printing-software-license .software-pdf-eyebrow,
+    body.printing-software-license .software-pdf-title-row p,
+    body.printing-software-license .software-pdf-issued {
+        font-size: 5pt;
+    }
+    body.printing-software-license .software-pdf-title-row h2 {
+        margin: 0;
+        font-size: 10pt;
+    }
+    body.printing-software-license .software-pdf-filter-scope {
+        gap: 2px 4px;
+        margin-top: 3px;
+        padding: 3px 5px;
+        font-size: 4.8pt;
+    }
+    body.printing-software-license .software-pdf-filter-scope span {
+        padding: 1px 3px;
+    }
+    body.printing-software-license .software-pdf-kpis {
+        gap: 4px;
+        margin: 4px 0 3px;
+    }
+    body.printing-software-license .software-pdf-kpis > div {
+        gap: 0;
+        min-height: 30px;
+        padding: 3px 5px;
+        border-radius: 4px;
+    }
+    body.printing-software-license .software-pdf-kpis span,
+    body.printing-software-license .software-pdf-kpis small {
+        font-size: 4.7pt;
+    }
+    body.printing-software-license .software-pdf-kpis strong {
+        font-size: 8pt;
+    }
+    body.printing-software-license .software-pdf-billing-summary {
+        grid-template-columns: 80px 80px minmax(180px, 1fr);
+        gap: 4px;
+        margin-bottom: 4px;
+    }
+    body.printing-software-license .software-pdf-billing-card,
+    body.printing-software-license .software-pdf-utilization {
+        padding: 2px 5px;
+        border-radius: 4px;
+    }
+    body.printing-software-license .software-pdf-billing-card,
+    body.printing-software-license .software-pdf-utilization-label {
+        font-size: 5pt;
+    }
+    body.printing-software-license .software-pdf-progress {
+        height: 3px;
+    }
+    body.printing-software-license .software-print-header > h3 {
+        margin-bottom: 3px;
+        padding-bottom: 2px;
+        font-size: 6pt;
+    }
+    body.printing-software-license .software-pdf-departments {
+        gap: 4px;
+    }
+    body.printing-software-license .software-pdf-department-header {
+        grid-template-columns: minmax(150px, 1fr) 72px 62px 90px;
+        gap: 4px;
+        margin-bottom: 3px;
+        padding: 3px 6px;
+        border-radius: 4px;
+    }
+    body.printing-software-license .software-pdf-department-name span,
+    body.printing-software-license .software-pdf-department-stat span,
+    body.printing-software-license .software-pdf-department-stat small {
+        font-size: 4.3pt;
+    }
+    body.printing-software-license .software-pdf-department-name h4 {
+        font-size: 7pt;
+    }
+    body.printing-software-license .software-pdf-department-stat {
+        padding-left: 4px;
+    }
+    body.printing-software-license .software-pdf-department-stat strong {
+        font-size: 6pt;
+    }
+    body.printing-software-license .software-pdf-program-grid {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 3px;
+    }
+    body.printing-software-license .software-pdf-program-card {
+        border-radius: 4px;
+    }
+    body.printing-software-license .software-pdf-usage-card {
+        min-height: 0;
+    }
+    body.printing-software-license .software-pdf-usage-card .software-pdf-program-heading {
+        min-height: 24px;
+        gap: 3px;
+        padding: 3px 4px;
+    }
+    body.printing-software-license .software-pdf-program-heading span {
+        margin: 0;
+        font-size: 4pt;
+    }
+    body.printing-software-license .software-pdf-program-heading h4 {
+        font-size: 6pt;
+        line-height: 1.1;
+    }
+    body.printing-software-license .software-pdf-user-count {
+        gap: 1px;
+        padding: 2px 3px;
+        border-radius: 3px;
+    }
+    body.printing-software-license .software-pdf-user-count strong {
+        font-size: 7pt;
+    }
+    body.printing-software-license .software-pdf-user-count span {
+        font-size: 3.8pt;
+    }
+    body.printing-software-license .software-pdf-program-details {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    body.printing-software-license .software-pdf-program-details > div {
+        padding: 2px 3px;
+    }
+    body.printing-software-license .software-pdf-program-details > div:nth-child(even) {
+        border-right: 1px solid #e2e8f0;
+    }
+    body.printing-software-license .software-pdf-program-details > div:nth-child(3n) {
+        border-right: 0;
+    }
+    body.printing-software-license .software-pdf-program-details > div.users {
+        grid-column: 1 / -1;
+    }
+    body.printing-software-license .software-pdf-program-details dt {
+        margin-bottom: 0;
+        font-size: 3.8pt;
+    }
+    body.printing-software-license .software-pdf-program-details dd {
+        font-size: 4.2pt;
+        line-height: 1.1;
+    }
     body.printing-software-license .details-table {
         width: 100% !important;
         min-width: 0 !important;
