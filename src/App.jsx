@@ -1939,6 +1939,15 @@ function Dashboard({ currentUser, onLogout }) {
   const [softwareCurrentUsers, setSoftwareCurrentUsers] = useState('');
   const [softwareSearch, setSoftwareSearch] = useState('');
   const [softwareBillingFilter, setSoftwareBillingFilter] = useState('all');
+  const [softwareAdvancedFilters, setSoftwareAdvancedFilters] = useState({
+    name: 'all',
+    owner: 'all',
+    paymentChannel: 'all',
+    paymentDate: 'all',
+    expiringDate: 'all',
+    registeredEmail: 'all',
+    currentUsers: 'all',
+  });
   const [softwareFormExpanded, setSoftwareFormExpanded] = useState(false);
   const softwareExcelInputRef = useRef(null);
   const emptyVendorContract = { vendor: '', service: '', contractNo: '', startDate: '', endDate: '', billingCycle: 'รายเดือน', amount: '0', contact: '', status: 'ใช้งาน', notes: '' };
@@ -3773,6 +3782,28 @@ function Dashboard({ currentUser, onLogout }) {
     if (/รายเดือน|monthly|month/.test(paymentSchedule)) return false;
     return /รายปี|annual|yearly|year/.test(paymentSchedule) || /\d{1,4}[/.-]\d{1,2}[/.-]\d{1,4}/.test(paymentSchedule);
   };
+  const normalizeSoftwareFilterValue = (value) => String(value || '').trim().toLocaleLowerCase('th-TH');
+  const splitSoftwareUsers = (value) => String(value || '')
+    .split(/[,;\n]+/)
+    .map((entry) => entry.trim())
+    .filter((entry) => entry && entry !== '-');
+  const softwareFilterDefinitions = [
+    { key: 'name', label: 'ชื่อซอฟต์แวร์/โปรแกรม', placeholder: 'ทุกโปรแกรม' },
+    { key: 'owner', label: 'Owner / แผนก', placeholder: 'ทุกแผนก' },
+    { key: 'paymentChannel', label: 'ช่องทางชำระ', placeholder: 'ทุกช่องทาง' },
+    { key: 'paymentDate', label: 'ประเภท', placeholder: 'ทุกประเภท' },
+    { key: 'expiringDate', label: 'วันหมดสัญญา', placeholder: 'ทุกวันหมดสัญญา' },
+    { key: 'registeredEmail', label: 'อีเมลสมัคร', placeholder: 'ทุกอีเมล' },
+    { key: 'currentUsers', label: 'ผู้ใช้งานปัจจุบัน', placeholder: 'ผู้ใช้งานทั้งหมด' },
+  ];
+  const softwareFilterOptions = softwareFilterDefinitions.reduce((options, definition) => {
+    const values = (activeData?.softwareExpiringDetails || []).flatMap((item) => (
+      definition.key === 'currentUsers' ? splitSoftwareUsers(item.currentUsers) : [String(item[definition.key] || '').trim()]
+    ));
+    options[definition.key] = Array.from(new Set(values.filter((value) => value && value !== '-')))
+      .sort((a, b) => a.localeCompare(b, 'th', { numeric: true }));
+    return options;
+  }, {});
   const filteredSoftwareLicenses = (activeData?.softwareExpiringDetails || [])
     .map((item, originalIndex) => ({ item, originalIndex }))
     .filter(({ item }) => {
@@ -3790,8 +3821,25 @@ function Dashboard({ currentUser, onLogout }) {
       const matchesBilling = softwareBillingFilter === 'all' ||
         (softwareBillingFilter === 'monthly' && !annual) ||
         (softwareBillingFilter === 'yearly' && annual);
-      return matchesSearch && matchesBilling;
+      const matchesAdvancedFilters = softwareFilterDefinitions.every(({ key }) => {
+        const selectedValue = softwareAdvancedFilters[key];
+        if (!selectedValue || selectedValue === 'all') return true;
+        if (key === 'currentUsers') {
+          return splitSoftwareUsers(item.currentUsers)
+            .some((user) => normalizeSoftwareFilterValue(user) === normalizeSoftwareFilterValue(selectedValue));
+        }
+        return normalizeSoftwareFilterValue(item[key]) === normalizeSoftwareFilterValue(selectedValue);
+      });
+      return matchesSearch && matchesBilling && matchesAdvancedFilters;
     });
+  const groupedSoftwareLicenses = Array.from(filteredSoftwareLicenses.reduce((groups, row) => {
+    const department = String(row.item.owner || '').trim() || 'ไม่ระบุ Owner / แผนก';
+    if (!groups.has(department)) groups.set(department, []);
+    groups.get(department).push(row);
+    return groups;
+  }, new Map()).entries())
+    .sort(([departmentA], [departmentB]) => departmentA.localeCompare(departmentB, 'th', { numeric: true }));
+  const hasSoftwareAdvancedFilters = Object.values(softwareAdvancedFilters).some((value) => value !== 'all');
   const filteredSoftwareTotalCost = filteredSoftwareLicenses.reduce(
     (sum, { item }) => sum + Number(item.monthlyCost ?? item.price ?? 0),
     0,
@@ -3820,6 +3868,7 @@ function Dashboard({ currentUser, onLogout }) {
       billingTypes: new Set(),
       expiryDates: new Set(),
       registeredEmails: new Set(),
+      owners: new Set(),
     };
     current.used += Number(item.used || 0);
     current.price += Number(item.monthlyCost ?? item.price ?? 0);
@@ -3828,6 +3877,7 @@ function Dashboard({ currentUser, onLogout }) {
     [item.paymentDate].filter(Boolean).forEach(value => current.billingTypes.add(String(value).trim()));
     [item.expiringDate].filter(Boolean).forEach(value => current.expiryDates.add(String(value).trim()));
     [item.registeredEmail].filter(Boolean).forEach(value => current.registeredEmails.add(String(value).trim()));
+    [item.owner].filter(Boolean).forEach(value => current.owners.add(String(value).trim()));
     groups.set(key, current);
     return groups;
   }, new Map()).values())
@@ -3854,9 +3904,10 @@ function Dashboard({ currentUser, onLogout }) {
         billingType: Array.from(group.billingTypes).join(', ') || '-',
         expiryDate: Array.from(group.expiryDates).join(', ') || '-',
         registeredEmail: Array.from(group.registeredEmails).join(', ') || '-',
+        owner: Array.from(group.owners).join(', ') || 'ไม่ระบุ Owner / แผนก',
       };
     })
-    .sort((a, b) => b.userCount - a.userCount || a.name.localeCompare(b.name, 'th'));
+    .sort((a, b) => a.owner.localeCompare(b.owner, 'th', { numeric: true }) || a.name.localeCompare(b.name, 'th', { numeric: true }));
   const detailedMonthlySoftwareCost = detailedSoftwareLicenses.reduce((sum, item) =>
     sum + (isAnnualSoftwareCost(item) ? 0 : Number(item.monthlyCost ?? item.price ?? 0)), 0);
   const detailedAnnualSoftwareCost = detailedSoftwareLicenses.reduce((sum, item) =>
@@ -7398,6 +7449,54 @@ function Dashboard({ currentUser, onLogout }) {
                   ดาวน์โหลด PDF Dashboard
                 </button>
               </div>
+              <div className="software-advanced-filters no-print" aria-label="ตัวกรองทะเบียนโปรแกรมและ License">
+                <div className="software-filter-heading">
+                  <div>
+                    <strong>ตัวกรองรายละเอียด</strong>
+                    <span>จัดเรียงผลลัพธ์แยกตาม Owner / แผนก</span>
+                  </div>
+                  {(hasSoftwareAdvancedFilters || softwareSearch || softwareBillingFilter !== 'all') && (
+                    <button
+                      type="button"
+                      className="software-clear-filters"
+                      onClick={() => {
+                        setSoftwareSearch('');
+                        setSoftwareBillingFilter('all');
+                        setSoftwareAdvancedFilters({
+                          name: 'all',
+                          owner: 'all',
+                          paymentChannel: 'all',
+                          paymentDate: 'all',
+                          expiringDate: 'all',
+                          registeredEmail: 'all',
+                          currentUsers: 'all',
+                        });
+                      }}
+                    >
+                      ล้างตัวกรอง
+                    </button>
+                  )}
+                </div>
+                <div className="software-filter-grid">
+                  {softwareFilterDefinitions.map(({ key, label, placeholder }) => (
+                    <label key={key}>
+                      <span>{label}</span>
+                      <select
+                        value={softwareAdvancedFilters[key]}
+                        onChange={(event) => setSoftwareAdvancedFilters((current) => ({
+                          ...current,
+                          [key]: event.target.value,
+                        }))}
+                      >
+                        <option value="all">{placeholder}</option>
+                        {(softwareFilterOptions[key] || []).map((option) => (
+                          <option key={option} value={option}>{option}</option>
+                        ))}
+                      </select>
+                    </label>
+                  ))}
+                </div>
+              </div>
               <div className="table-responsive" style={{ overflowX: 'auto' }}>
                 <table className="details-table">
                   <thead>
@@ -7418,26 +7517,37 @@ function Dashboard({ currentUser, onLogout }) {
                   </thead>
                   <tbody>
                     {filteredSoftwareLicenses.length > 0 ? (
-                      filteredSoftwareLicenses.map(({ item: soft, originalIndex }) => (
-                        <tr key={originalIndex}>
-                          <td><strong>{soft.name}</strong></td>
-                          <td>{soft.owner || '-'}</td>
-                          <td>{soft.used ?? '-'}</td>
-                          <td>{soft.vacant ?? '-'}</td>
-                          <td>{soft.licenses ?? (Number(soft.used || 0) + Number(soft.vacant || 0))}</td>
-                          <td>{soft.monthlyCost !== undefined ? formatThaiBaht(soft.monthlyCost) : '-'}</td>
-                          <td>{soft.paymentChannel || '-'}</td>
-                          <td>{soft.paymentDate || '-'}</td>
-                          <td>{soft.expiringDate || '-'}</td>
-                          <td>{soft.registeredEmail || '-'}</td>
-                          <td style={{ minWidth: '160px' }}>{soft.currentUsers || '-'}</td>
-                          {isAdmin && <td className="software-admin-column">
-                            <div className="software-row-actions">
-                              <button type="button" className="btn-details" onClick={() => editSoftwareLicense(soft, originalIndex)}>แก้ไข</button>
-                              <button type="button" className="console-delete-btn" onClick={() => deleteSoftwareLicense(originalIndex)}>ลบ</button>
-                            </div>
-                          </td>}
-                        </tr>
+                      groupedSoftwareLicenses.map(([department, rows]) => (
+                        <Fragment key={department}>
+                          <tr className="software-department-row">
+                            <td colSpan={isAdmin ? 12 : 11}>
+                              <span>Owner / แผนก</span>
+                              <strong>{department}</strong>
+                              <small>{rows.length.toLocaleString()} รายการ</small>
+                            </td>
+                          </tr>
+                          {rows.map(({ item: soft, originalIndex }) => (
+                            <tr key={originalIndex}>
+                              <td><strong>{soft.name}</strong></td>
+                              <td>{soft.owner || '-'}</td>
+                              <td>{soft.used ?? '-'}</td>
+                              <td>{soft.vacant ?? '-'}</td>
+                              <td>{soft.licenses ?? (Number(soft.used || 0) + Number(soft.vacant || 0))}</td>
+                              <td>{soft.monthlyCost !== undefined ? formatThaiBaht(soft.monthlyCost) : '-'}</td>
+                              <td>{soft.paymentChannel || '-'}</td>
+                              <td>{soft.paymentDate || '-'}</td>
+                              <td>{soft.expiringDate || '-'}</td>
+                              <td>{soft.registeredEmail || '-'}</td>
+                              <td style={{ minWidth: '160px' }}>{soft.currentUsers || '-'}</td>
+                              {isAdmin && <td className="software-admin-column">
+                                <div className="software-row-actions">
+                                  <button type="button" className="btn-details" onClick={() => editSoftwareLicense(soft, originalIndex)}>แก้ไข</button>
+                                  <button type="button" className="console-delete-btn" onClick={() => deleteSoftwareLicense(originalIndex)}>ลบ</button>
+                                </div>
+                              </td>}
+                            </tr>
+                          ))}
+                        </Fragment>
                       ))
                     ) : (
                       <tr>

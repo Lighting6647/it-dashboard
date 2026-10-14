@@ -685,6 +685,98 @@ body {
     margin: 0 0 12px;
 }
 
+.software-advanced-filters {
+    margin: 0 0 14px;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: rgba(15, 23, 42, 0.5);
+}
+
+.software-filter-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.software-filter-heading > div {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+}
+
+.software-filter-heading strong {
+    color: var(--text-primary);
+    font-size: .88rem;
+}
+
+.software-filter-heading span {
+    color: var(--text-muted);
+    font-size: .76rem;
+}
+
+.software-clear-filters {
+    border: 0;
+    background: transparent;
+    color: #60a5fa;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.software-filter-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(150px, 1fr));
+    gap: 10px;
+}
+
+.software-filter-grid label {
+    display: grid;
+    gap: 5px;
+    min-width: 0;
+}
+
+.software-filter-grid label span {
+    color: var(--text-muted);
+    font-size: .72rem;
+    font-weight: 700;
+}
+
+.software-filter-grid select {
+    width: 100%;
+    min-width: 0;
+    min-height: 38px;
+    padding: 7px 30px 7px 9px;
+    border: 1px solid var(--border-color);
+    border-radius: 7px;
+    background: #dbeafe;
+    color: #0f172a;
+}
+
+.details-table .software-department-row td {
+    padding: 9px 12px;
+    border-top: 2px solid rgba(96, 165, 250, 0.45);
+    border-bottom: 1px solid rgba(96, 165, 250, 0.25);
+    background: linear-gradient(90deg, rgba(37, 99, 235, 0.28), rgba(30, 58, 138, 0.12));
+    color: var(--text-primary);
+}
+
+.software-department-row td span {
+    margin-right: 8px;
+    color: #93c5fd;
+    font-size: .72rem;
+    text-transform: uppercase;
+}
+
+.software-department-row td strong {
+    margin-right: 10px;
+}
+
+.software-department-row td small {
+    color: var(--text-muted);
+}
+
 .software-pdf-download {
     display: inline-flex;
     align-items: center;
@@ -3663,9 +3755,16 @@ body.modal-open { overflow: auto; overflow-y: auto; }
     .software-license-actions { flex-wrap: wrap; }
     .software-license-actions button { flex: 1 1 145px; min-height: 44px; }
     .software-license-toolbar { grid-template-columns: minmax(0, 1fr); }
+    .software-filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .software-filter-heading > div { display: grid; gap: 2px; }
     .software-billing-filter { width: 100%; }
     .software-billing-filter button { flex: 1; min-height: 40px; }
     .software-filter-result { white-space: normal; }
+}
+
+@media screen and (max-width: 560px) {
+    .software-filter-grid { grid-template-columns: minmax(0, 1fr); }
+    .software-filter-heading { align-items: flex-start; }
 }
 
 @media screen and (max-width: 390px) {
