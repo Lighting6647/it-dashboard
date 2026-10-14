@@ -4595,6 +4595,9 @@ html, body, #root {
 .pdf-asset-summary-table td:not(:first-child) {
     width: 11%;
 }
+.pdf-asset-expense-table {
+    margin-bottom: 8px;
+}
 .pdf-table {
     width: 100%;
     border-collapse: collapse;
@@ -4825,7 +4828,7 @@ html, body, #root {
         line-height: 1.05;
     }
     body.printing-pdf-report .pdf-kpi-grid {
-        grid-template-columns: repeat(5, minmax(0, 1fr));
+        grid-template-columns: repeat(6, minmax(0, 1fr));
         gap: 3px;
     }
     body.printing-pdf-report .pdf-kpi-box {
@@ -4847,6 +4850,9 @@ html, body, #root {
         line-height: 1.05;
     }
     body.printing-pdf-report .pdf-asset-kpi-grid {
+        margin-bottom: 3px;
+    }
+    body.printing-pdf-report .pdf-asset-expense-table {
         margin-bottom: 3px;
     }
     body.printing-pdf-report .pdf-table {

@@ -8784,6 +8784,14 @@ function Dashboard({ currentUser, onLogout }) {
         ['pending', 'need_info', 'approved'].includes(request.status) && !request.assigned_asset_sn
       );
       const totalPendingPurchasePrice = pendingPurchaseRequests.reduce((sum, request) => sum + Number(request.estimated_price || 0), 0);
+      const parseAssetExpense = (value) => {
+        const parsed = Number(String(value ?? '').replace(/[^0-9.-]/g, ''));
+        return Number.isFinite(parsed) ? parsed : 0;
+      };
+      const assetExpenseRows = (assetsList || [])
+        .map((asset) => ({ ...asset, registeredExpense: parseAssetExpense(asset.cost ?? asset.expense) }))
+        .filter((asset) => asset.registeredExpense > 0);
+      const totalAssetRegisteredExpense = assetExpenseRows.reduce((sum, asset) => sum + asset.registeredExpense, 0);
       const securityIncidents = Number(activeData?.securityIncidents || 0);
       const securityScore = Math.max(70, 100 - (securityIncidents * 10));
       const assetCategoryRows = (registryAssetBreakdown || []).map((category) => {
@@ -8796,6 +8804,7 @@ function Dashboard({ currentUser, onLogout }) {
           vacant: countStatus('ว่าง'),
           broken: categoryAssets.filter(asset => ['รอซ่อม', 'ชำรุด'].includes(normalizeAssetStatus(asset.status))).length,
           lost: countStatus('สูญหาย'),
+          expense: categoryAssets.reduce((sum, asset) => sum + parseAssetExpense(asset.cost ?? asset.expense), 0),
         };
       });
       const registryActiveCount = assetCategoryRows.reduce((sum, category) => sum + category.active, 0);
@@ -8864,6 +8873,11 @@ function Dashboard({ currentUser, onLogout }) {
                       <strong className="pdf-kpi-value">{pendingPurchaseRequests.length} รายการ</strong>
                       <small>มูลค่ารวม {formatThaiBaht(totalPendingPurchasePrice)}</small>
                     </div>
+                    <div className="pdf-kpi-box">
+                      <span className="pdf-kpi-label">ค่าใช้จ่ายในทะเบียนอุปกรณ์</span>
+                      <strong className="pdf-kpi-value">{formatThaiBaht(totalAssetRegisteredExpense)}</strong>
+                      <small>จากอุปกรณ์ {assetExpenseRows.length.toLocaleString()} รายการ</small>
+                    </div>
                   </div>
                 </div>
 
@@ -8905,6 +8919,7 @@ function Dashboard({ currentUser, onLogout }) {
                         <th style={{ textAlign: 'center' }}>ว่าง</th>
                         <th style={{ textAlign: 'center' }}>ชำรุด</th>
                         <th style={{ textAlign: 'center' }}>สูญหาย</th>
+                        <th style={{ textAlign: 'right' }}>ค่าใช้จ่าย</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -8916,6 +8931,7 @@ function Dashboard({ currentUser, onLogout }) {
                           <td style={{ textAlign: 'center' }}>{category.vacant}</td>
                           <td style={{ textAlign: 'center' }}>{category.broken}</td>
                           <td style={{ textAlign: 'center' }}>{category.lost}</td>
+                          <td style={{ textAlign: 'right' }}>{formatThaiBaht(category.expense)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -8927,6 +8943,7 @@ function Dashboard({ currentUser, onLogout }) {
                         <td style={{ textAlign: 'center' }}><strong>{vacantStockCount}</strong></td>
                         <td style={{ textAlign: 'center' }}><strong>{warehouseBrokenCount}</strong></td>
                         <td style={{ textAlign: 'center' }}><strong>{warehouseLostCount}</strong></td>
+                        <td style={{ textAlign: 'right' }}><strong>{formatThaiBaht(totalAssetRegisteredExpense)}</strong></td>
                       </tr>
                     </tfoot>
                   </table>
@@ -8934,6 +8951,22 @@ function Dashboard({ currentUser, onLogout }) {
 
                 <div className="pdf-section">
                   <h3 className="pdf-section-title">3. รายละเอียดงบประมาณและค่าใช้จ่ายซ่อมแซม (IT Repair Expense Analytics)</h3>
+                  {assetExpenseRows.length > 0 && (
+                    <table className="pdf-table pdf-asset-expense-table">
+                      <thead><tr><th>เลขที่</th><th>หมายเลขอุปกรณ์</th><th>อุปกรณ์</th><th>ผู้ใช้งาน / แผนก</th><th>สถานะ</th><th style={{ textAlign: 'right' }}>ค่าใช้จ่าย (บาท)</th></tr></thead>
+                      <tbody>{assetExpenseRows.map((asset) => (
+                        <tr key={`pdf-asset-expense-${asset.sn}`}>
+                          <td>#{asset.sn || '-'}</td>
+                          <td>{asset.deviceSerial || '-'}</td>
+                          <td>{asset.itemType || '-'}</td>
+                          <td>{asset.user || '-'} / {asset.position || '-'}</td>
+                          <td>{asset.status || '-'}</td>
+                          <td style={{ textAlign: 'right' }}><strong>{formatThaiBaht(asset.registeredExpense)}</strong></td>
+                        </tr>
+                      ))}</tbody>
+                      <tfoot><tr><td colSpan="5" style={{ textAlign: 'right' }}><strong>รวมค่าใช้จ่ายจากทะเบียนอุปกรณ์:</strong></td><td style={{ textAlign: 'right' }}><strong>{formatThaiBaht(totalAssetRegisteredExpense)}</strong></td></tr></tfoot>
+                    </table>
+                  )}
                   <table className="pdf-table">
                     <thead>
                       <tr>
