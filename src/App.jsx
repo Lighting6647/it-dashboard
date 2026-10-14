@@ -3862,7 +3862,7 @@ function Dashboard({ currentUser, onLogout }) {
   const filteredSoftwareUtilization = filteredSoftwareLicenseTotal > 0
     ? Math.round((filteredSoftwareUsed / filteredSoftwareLicenseTotal) * 100)
     : 0;
-  const softwareUsageOverviewCards = Array.from(filteredSoftwareLicenses.reduce((groups, { item, originalIndex }) => {
+  const buildSoftwareUsageCards = (licenseRows) => Array.from(licenseRows.reduce((groups, { item, originalIndex }) => {
     const displayName = String(item.name || 'ไม่ระบุชื่อซอฟต์แวร์').trim();
     const key = displayName.normalize('NFKC').toLocaleLowerCase('en-US').replace(/\s+/g, ' ');
     const current = groups.get(key) || {
@@ -3914,7 +3914,18 @@ function Dashboard({ currentUser, onLogout }) {
         owner: Array.from(group.owners).join(', ') || 'ไม่ระบุ Owner / แผนก',
       };
     })
-    .sort((a, b) => a.owner.localeCompare(b.owner, 'th', { numeric: true }) || a.name.localeCompare(b.name, 'th', { numeric: true }));
+    .sort((a, b) => a.name.localeCompare(b.name, 'th', { numeric: true }));
+  const softwareUsageOverviewCards = buildSoftwareUsageCards(filteredSoftwareLicenses);
+  const softwareDepartmentPdfGroups = groupedSoftwareLicenses.map(([department, rows]) => {
+    const cards = buildSoftwareUsageCards(rows);
+    return {
+      department,
+      cards,
+      programCount: cards.length,
+      userCount: cards.reduce((sum, card) => sum + card.userCount, 0),
+      totalCost: rows.reduce((sum, { item }) => sum + Number(item.monthlyCost ?? item.price ?? 0), 0),
+    };
+  });
   const detailedMonthlySoftwareCost = detailedSoftwareLicenses.reduce((sum, item) =>
     sum + (isAnnualSoftwareCost(item) ? 0 : Number(item.monthlyCost ?? item.price ?? 0)), 0);
   const detailedAnnualSoftwareCost = detailedSoftwareLicenses.reduce((sum, item) =>
@@ -7400,25 +7411,53 @@ function Dashboard({ currentUser, onLogout }) {
                     <div className="software-pdf-progress"><span style={{ width: `${Math.min(filteredSoftwareUtilization, 100)}%` }} /></div>
                   </div>
                 </div>
-                <h3>ภาพรวมผู้ใช้งานซอฟต์แวร์ทั้งหมด ({softwareUsageOverviewCards.length.toLocaleString()} โปรแกรม)</h3>
-                <div className="software-pdf-program-grid">
-                  {softwareUsageOverviewCards.map((software) => (
-                    <article className="software-pdf-program-card software-pdf-usage-card" key={`pdf-software-${software.originalIndex}`}>
-                      <div className="software-pdf-program-heading">
-                        <div>
-                          <span>ชื่อซอฟต์แวร์</span>
-                          <h4>{software.name}</h4>
+                <h3>ภาพรวมซอฟต์แวร์แยกตามแผนก ({softwareUsageOverviewCards.length.toLocaleString()} โปรแกรม)</h3>
+                <div className="software-pdf-departments">
+                  {softwareDepartmentPdfGroups.map((group) => (
+                    <section className="software-pdf-department" key={`pdf-department-${group.department}`}>
+                      <header className="software-pdf-department-header">
+                        <div className="software-pdf-department-name">
+                          <span>Owner / แผนก</span>
+                          <h4>{group.department}</h4>
                         </div>
-                        <div className="software-pdf-user-count">
-                          <strong>{software.userCount.toLocaleString()}</strong>
-                          <span>คน</span>
+                        <div className="software-pdf-department-stat">
+                          <span>จำนวนโปรแกรม</span>
+                          <strong>{group.programCount.toLocaleString()} <small>รายการ</small></strong>
                         </div>
+                        <div className="software-pdf-department-stat">
+                          <span>ผู้ใช้งาน</span>
+                          <strong>{group.userCount.toLocaleString()} <small>คน</small></strong>
+                        </div>
+                        <div className="software-pdf-department-stat">
+                          <span>รวมราคา</span>
+                          <strong>{formatThaiBaht(group.totalCost)}</strong>
+                        </div>
+                      </header>
+                      <div className="software-pdf-program-grid">
+                        {group.cards.map((software) => (
+                          <article className="software-pdf-program-card software-pdf-usage-card" key={`pdf-software-${group.department}-${software.originalIndex}`}>
+                            <div className="software-pdf-program-heading">
+                              <div>
+                                <span>ชื่อซอฟต์แวร์</span>
+                                <h4>{software.name}</h4>
+                              </div>
+                              <div className="software-pdf-user-count">
+                                <strong>{software.userCount.toLocaleString()}</strong>
+                                <span>คน</span>
+                              </div>
+                            </div>
+                            <dl className="software-pdf-program-details">
+                              <div><dt>ราคา</dt><dd>{formatThaiBaht(software.price)}</dd></div>
+                              <div><dt>ช่องทางชำระ</dt><dd>{software.paymentChannel}</dd></div>
+                              <div><dt>ประเภท</dt><dd>{software.billingType}</dd></div>
+                              <div><dt>วันหมดสัญญา</dt><dd>{software.expiryDate}</dd></div>
+                              <div><dt>อีเมลสมัคร</dt><dd>{software.registeredEmail}</dd></div>
+                              <div className="users"><dt>ผู้ใช้งานปัจจุบัน</dt><dd>{software.userNames}</dd></div>
+                            </dl>
+                          </article>
+                        ))}
                       </div>
-                      <div className="software-pdf-user-list">
-                        <span>ผู้ใช้งาน</span>
-                        <strong>{software.userNames}</strong>
-                      </div>
-                    </article>
+                    </section>
                   ))}
                 </div>
               </div>
