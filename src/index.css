@@ -4816,6 +4816,33 @@ html, body, #root {
         font-size: 7pt;
         color: #64748b !important;
     }
+    body.printing-software-license .software-pdf-filter-scope {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px 6px;
+        margin: 7px 0 0;
+        padding: 6px 8px;
+        border: 1px solid #bfdbfe;
+        border-radius: 7px;
+        background: #eff6ff !important;
+        font-size: 6.5pt;
+        color: #334155 !important;
+    }
+    body.printing-software-license .software-pdf-filter-scope strong {
+        color: #0f3d68 !important;
+    }
+    body.printing-software-license .software-pdf-filter-scope span {
+        padding: 2px 5px;
+        border: 1px solid #93c5fd;
+        border-radius: 999px;
+        background: #ffffff !important;
+        color: #1e3a8a !important;
+    }
+    body.printing-software-license .software-pdf-filter-scope small {
+        margin-left: auto;
+        color: #475569 !important;
+    }
     body.printing-software-license .software-pdf-kpis {
         display: grid;
         grid-template-columns: repeat(5, minmax(0, 1fr));

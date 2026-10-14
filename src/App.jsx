@@ -3840,6 +3840,13 @@ function Dashboard({ currentUser, onLogout }) {
   }, new Map()).entries())
     .sort(([departmentA], [departmentB]) => departmentA.localeCompare(departmentB, 'th', { numeric: true }));
   const hasSoftwareAdvancedFilters = Object.values(softwareAdvancedFilters).some((value) => value !== 'all');
+  const softwareActiveFilterLabels = [
+    softwareSearch.trim() ? `คำค้นหา: ${softwareSearch.trim()}` : null,
+    softwareBillingFilter !== 'all' ? `รอบชำระ: ${softwareBillingFilter === 'monthly' ? 'รายเดือน' : 'รายปี'}` : null,
+    ...softwareFilterDefinitions.map(({ key, label }) => (
+      softwareAdvancedFilters[key] !== 'all' ? `${label}: ${softwareAdvancedFilters[key]}` : null
+    )),
+  ].filter(Boolean);
   const filteredSoftwareTotalCost = filteredSoftwareLicenses.reduce(
     (sum, { item }) => sum + Number(item.monthlyCost ?? item.price ?? 0),
     0,
@@ -7360,6 +7367,15 @@ function Dashboard({ currentUser, onLogout }) {
                     <span>{new Date().toLocaleDateString('th-TH')}</span>
                   </div>
                 </div>
+                <div className="software-pdf-filter-scope">
+                  <strong>ขอบเขตรายงาน:</strong>
+                  {softwareActiveFilterLabels.length > 0 ? (
+                    softwareActiveFilterLabels.map((filterLabel) => <span key={filterLabel}>{filterLabel}</span>)
+                  ) : (
+                    <span>ข้อมูลทั้งหมด</span>
+                  )}
+                  <small>แสดงเฉพาะ {filteredSoftwareLicenses.length.toLocaleString()} รายการตามผลลัพธ์ที่กรอง</small>
+                </div>
                 <div className="software-pdf-kpis">
                   <div><span>โปรแกรมทั้งหมด</span><strong>{filteredSoftwareLicenses.length.toLocaleString()}</strong><small>รายการ</small></div>
                   <div><span>License รวม</span><strong>{filteredSoftwareLicenseTotal.toLocaleString()}</strong><small>Core/User</small></div>
@@ -7446,7 +7462,7 @@ function Dashboard({ currentUser, onLogout }) {
                   title="เปิดหน้าต่างบันทึกไฟล์ โดยเลือก Save as PDF"
                 >
                   <Download size={16} />
-                  ดาวน์โหลด PDF Dashboard
+                  ดาวน์โหลด PDF ({filteredSoftwareLicenses.length.toLocaleString()} รายการ)
                 </button>
               </div>
               <div className="software-advanced-filters no-print" aria-label="ตัวกรองทะเบียนโปรแกรมและ License">
