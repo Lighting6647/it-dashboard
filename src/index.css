@@ -4771,6 +4771,125 @@ html, body, #root {
         height: auto !important;
         overflow: visible !important;
     }
+    /* Compact the executive report toward one A4 landscape page without removing sections. */
+    body.printing-pdf-report .pdf-report-overlay .modal {
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    body.printing-pdf-report .pdf-executive-report {
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 4px 6px !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+    }
+    body.printing-pdf-report .pdf-report-header {
+        align-items: center;
+        margin-bottom: 4px;
+        padding-bottom: 4px;
+        border-bottom-width: 1px;
+    }
+    body.printing-pdf-report .pdf-logo-group {
+        gap: 6px;
+    }
+    body.printing-pdf-report .pdf-logo {
+        width: 58px;
+        border-radius: 3px;
+    }
+    body.printing-pdf-report .pdf-logo-group h2 {
+        font-size: 8pt;
+        line-height: 1.05;
+    }
+    body.printing-pdf-report .pdf-logo-group p,
+    body.printing-pdf-report .pdf-report-meta {
+        margin-top: 1px;
+        gap: 1px;
+        font-size: 4.6pt;
+        line-height: 1.1;
+    }
+    body.printing-pdf-report .pdf-section {
+        margin-bottom: 4px;
+        break-inside: auto;
+        page-break-inside: auto;
+    }
+    body.printing-pdf-report .pdf-section-title {
+        margin: 0 0 3px;
+        padding-bottom: 2px;
+        border-bottom-width: 1px;
+        font-size: 6.2pt;
+        line-height: 1.05;
+    }
+    body.printing-pdf-report .pdf-kpi-grid {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 3px;
+    }
+    body.printing-pdf-report .pdf-kpi-box {
+        gap: 0;
+        min-height: 0;
+        padding: 3px 4px;
+        border-radius: 3px;
+    }
+    body.printing-pdf-report .pdf-kpi-label {
+        font-size: 4.5pt;
+        line-height: 1;
+    }
+    body.printing-pdf-report .pdf-kpi-value {
+        font-size: 7pt;
+        line-height: 1.05;
+    }
+    body.printing-pdf-report .pdf-kpi-box small {
+        font-size: 4pt;
+        line-height: 1.05;
+    }
+    body.printing-pdf-report .pdf-asset-kpi-grid {
+        margin-bottom: 3px;
+    }
+    body.printing-pdf-report .pdf-table {
+        table-layout: fixed;
+        font-size: 4.2pt;
+        line-height: 1;
+    }
+    body.printing-pdf-report .pdf-table th,
+    body.printing-pdf-report .pdf-table td {
+        padding: 1.5px 3px;
+        overflow-wrap: anywhere;
+    }
+    body.printing-pdf-report .pdf-table small {
+        font-size: 3.8pt;
+        line-height: 1;
+    }
+    body.printing-pdf-report .pdf-table strong[style] {
+        font-size: 5pt !important;
+    }
+    body.printing-pdf-report .pdf-list {
+        gap: 1px;
+        padding-left: 12px;
+        font-size: 4.5pt;
+        line-height: 1.05;
+    }
+    body.printing-pdf-report .pdf-signatures {
+        min-height: 0;
+        margin-top: 3px;
+        padding-top: 2px;
+        font-size: 4.2pt;
+    }
+    body.printing-pdf-report .pdf-sig-line {
+        height: 8px;
+    }
+    body.printing-pdf-report .pdf-sig-box {
+        gap: 0;
+    }
+    body.printing-pdf-report .pdf-sig-box strong,
+    body.printing-pdf-report .pdf-sig-box span,
+    body.printing-pdf-report .pdf-sig-box small {
+        font-size: 4.2pt;
+        line-height: 1;
+    }
     body.printing-software-license .software-license-report-overlay .table-responsive {
         display: none !important;
     }
