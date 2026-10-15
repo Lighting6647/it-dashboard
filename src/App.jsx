@@ -9057,20 +9057,6 @@ function Dashboard({ currentUser, onLogout }) {
                   </ul>
                 </div>
 
-                <div className="pdf-signatures">
-                  <div className="pdf-sig-box">
-                    <div className="pdf-sig-line"></div>
-                    <strong>(_________________________)</strong>
-                    <span>ผู้จัดทำรายงาน (IT Manager)</span>
-                    <small>วันที่ ____/____/________</small>
-                  </div>
-                  <div className="pdf-sig-box">
-                    <div className="pdf-sig-line"></div>
-                    <strong>(_________________________)</strong>
-                    <span>ผู้อนุมัติรายงาน (Managing Director / Executive)</span>
-                    <small>วันที่ ____/____/________</small>
-                  </div>
-                </div>
               </div>
             </div>
           </div>

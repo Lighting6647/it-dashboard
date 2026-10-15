@@ -4624,30 +4624,6 @@ html, body, #root {
     font-size: 0.9rem;
     color: #334155;
 }
-.pdf-signatures {
-    display: flex;
-    justify-content: space-around;
-    margin-top: 40px;
-    padding-top: 24px;
-    border-top: 1px dashed #cbd5e1;
-}
-.pdf-sig-box {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    min-width: 220px;
-}
-.pdf-sig-line {
-    width: 180px;
-    height: 1px;
-    background: #94a3b8;
-    margin-bottom: 30px;
-}
-.pdf-sig-box strong { font-size: 0.85rem; color: #334155; }
-.pdf-sig-box span { font-size: 0.8rem; color: #64748b; }
-.pdf-sig-box small { font-size: 0.75rem; color: #94a3b8; }
-
 /* QR Code Asset Tagging Sheet */
 .qr-tag-sheet-grid {
     display: grid;
@@ -4877,24 +4853,6 @@ html, body, #root {
         padding-left: 12px;
         font-size: 4.5pt;
         line-height: 1.05;
-    }
-    body.printing-pdf-report .pdf-signatures {
-        min-height: 0;
-        margin-top: 3px;
-        padding-top: 2px;
-        font-size: 4.2pt;
-    }
-    body.printing-pdf-report .pdf-sig-line {
-        height: 8px;
-    }
-    body.printing-pdf-report .pdf-sig-box {
-        gap: 0;
-    }
-    body.printing-pdf-report .pdf-sig-box strong,
-    body.printing-pdf-report .pdf-sig-box span,
-    body.printing-pdf-report .pdf-sig-box small {
-        font-size: 4.2pt;
-        line-height: 1;
     }
     body.printing-software-license .software-license-report-overlay .table-responsive {
         display: none !important;
