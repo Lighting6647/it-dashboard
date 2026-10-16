@@ -4750,7 +4750,7 @@ html, body, #root {
         height: auto !important;
         overflow: visible !important;
     }
-    /* Compact the executive report toward one A4 landscape page without removing sections. */
+    /* Format the executive report for the portrait A4 page selected by printScopedView. */
     body.printing-pdf-report .pdf-report-overlay .modal {
         width: 100% !important;
         max-width: none !important;

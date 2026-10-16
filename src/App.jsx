@@ -2128,7 +2128,21 @@ function Dashboard({ currentUser, onLogout }) {
   }, [activeModal]);
 
   const printScopedView = (scopeClass) => {
-    const cleanup = () => document.body.classList.remove(scopeClass);
+    const pageStyleId = 'scoped-print-page-style';
+    const existingPageStyle = document.getElementById(pageStyleId);
+    if (existingPageStyle) existingPageStyle.remove();
+
+    if (scopeClass === 'printing-pdf-report') {
+      const pageStyle = document.createElement('style');
+      pageStyle.id = pageStyleId;
+      pageStyle.textContent = '@page { size: A4 portrait; margin: 8mm; }';
+      document.head.appendChild(pageStyle);
+    }
+
+    const cleanup = () => {
+      document.body.classList.remove(scopeClass);
+      document.getElementById(pageStyleId)?.remove();
+    };
     document.body.classList.add(scopeClass);
     window.addEventListener('afterprint', cleanup, { once: true });
     window.requestAnimationFrame(() => window.print());
