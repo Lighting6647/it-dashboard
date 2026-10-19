@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import UserAccessManager from './pages/UserAccessManager';
 import fernAesthetiqueLogo from './assets/fern-aesthetique-logo.png';
 import { authFetch, clearAuth, getStoredAuth, ROLE_LABELS } from './auth';
+import { countPendingTicketClosures } from './utils/ticketMetrics';
 import Chart from 'chart.js/auto';
 import gsap from 'gsap';
 import * as XLSX from 'xlsx';
@@ -5631,9 +5632,7 @@ function Dashboard({ currentUser, onLogout }) {
   const pendingAssetReturnCount = assetRequests.filter(request =>
     request.status === 'return_requested'
   ).length;
-  const pendingTicketCloseCount = (data[currentMonth]?.ticketsList || []).filter(ticket =>
-    ticket.status === 'กำลังดำเนินการ'
-  ).length;
+  const pendingTicketCloseCount = countPendingTicketClosures(data[currentMonth]?.ticketsList);
 
   const pendingTicketsCount = pendingTicketCloseCount;
   const pendingAssetRequestsCount = (assetRequests || []).filter(req => req.status === 'pending').length;
@@ -8891,6 +8890,11 @@ function Dashboard({ currentUser, onLogout }) {
                       <span className="pdf-kpi-label">ค่าใช้จ่ายในทะเบียนอุปกรณ์</span>
                       <strong className="pdf-kpi-value">{formatThaiBaht(totalAssetRegisteredExpense)}</strong>
                       <small>จากอุปกรณ์ {assetExpenseRows.length.toLocaleString()} รายการ</small>
+                    </div>
+                    <div className="pdf-kpi-box">
+                      <span className="pdf-kpi-label">งานค้าง</span>
+                      <strong className="pdf-kpi-value">{pendingTicketCloseCount.toLocaleString()} รายการ</strong>
+                      <small>รอปิดงานในเมนู IT Close</small>
                     </div>
                   </div>
                 </div>
