@@ -1924,6 +1924,10 @@ function Dashboard({ currentUser, onLogout }) {
   const [lineNotifyTokenInput, setLineNotifyTokenInput] = useState('');
   const [lineNotifyTestStatus, setLineNotifyTestStatus] = useState('');
   const [lineNotifyTesting, setLineNotifyTesting] = useState(false);
+  const [larkWebhookInput, setLarkWebhookInput] = useState('');
+  const [larkWebhookConfigured, setLarkWebhookConfigured] = useState(false);
+  const [larkWebhookStatus, setLarkWebhookStatus] = useState('');
+  const [larkWebhookSaving, setLarkWebhookSaving] = useState(false);
   const [qrSearchQuery, setQrSearchQuery] = useState('');
   const [editingAssetSn, setEditingAssetSn] = useState(null);
   const [editingTicketSn, setEditingTicketSn] = useState(null);
@@ -5501,6 +5505,61 @@ function Dashboard({ currentUser, onLogout }) {
     }
   };
 
+  const loadLarkLicenseSettings = async () => {
+    try {
+      const response = await authFetch(`${API_BASE}/api/lark-license-settings`);
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || 'โหลดการตั้งค่าไม่สำเร็จ');
+      setLarkWebhookConfigured(Boolean(result.configured));
+    } catch (error) {
+      setLarkWebhookStatus(`❌ ${error.message}`);
+    }
+  };
+
+  const handleSaveLarkWebhook = async () => {
+    if (!larkWebhookInput.trim()) {
+      setLarkWebhookStatus('กรุณากรอก Lark Bot Webhook URL');
+      return;
+    }
+    setLarkWebhookSaving(true);
+    setLarkWebhookStatus('');
+    try {
+      const response = await authFetch(`${API_BASE}/api/lark-license-settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ webhookUrl: larkWebhookInput.trim() }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || 'บันทึกไม่สำเร็จ');
+      setLarkWebhookConfigured(true);
+      setLarkWebhookInput('');
+      setLarkWebhookStatus(`✅ ${result.message}`);
+    } catch (error) {
+      setLarkWebhookStatus(`❌ ${error.message}`);
+    } finally {
+      setLarkWebhookSaving(false);
+    }
+  };
+
+  const handleTestLarkWebhook = async () => {
+    setLarkWebhookSaving(true);
+    setLarkWebhookStatus('');
+    try {
+      const response = await authFetch(`${API_BASE}/api/test-lark-license-notify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ webhookUrl: larkWebhookInput.trim() }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || 'ส่งข้อความทดสอบไม่สำเร็จ');
+      setLarkWebhookStatus(`✅ ${result.message}`);
+    } catch (error) {
+      setLarkWebhookStatus(`❌ ${error.message}`);
+    } finally {
+      setLarkWebhookSaving(false);
+    }
+  };
+
   const openEditModal = () => {
     setFormInputs({
       // Assets
@@ -8053,7 +8112,7 @@ function Dashboard({ currentUser, onLogout }) {
                 <button onClick={() => setConsoleTab('projects')} className={`console-tab-btn ${consoleTab === 'projects' ? 'active' : ''}`}>🗒️ โครงการ & ข้อแนะนำ</button>
                 <button onClick={() => setConsoleTab('assets')} className={`console-tab-btn ${consoleTab === 'assets' ? 'active' : ''}`}>💻 คลังทรัพย์สิน IT</button>
                 <button onClick={() => setConsoleTab('tickets')} className={`console-tab-btn ${consoleTab === 'tickets' ? 'active' : ''}`}>🚨 ประวัติงาน Support</button>
-                <button onClick={() => setConsoleTab('backup')} className={`console-tab-btn ${consoleTab === 'backup' ? 'active' : ''}`}>💾 สำรอง & รีเซ็ตระบบ</button>
+                <button onClick={() => { setConsoleTab('backup'); loadLarkLicenseSettings(); }} className={`console-tab-btn ${consoleTab === 'backup' ? 'active' : ''}`}>💾 สำรอง & รีเซ็ตระบบ</button>
               </nav>
               {consoleTab === 'assets' && editingAssetSn === null && (
                 <button type="button" onClick={handleAddAsset} className="btn-save asset-add-topbar-btn">เพิ่มทรัพย์สินเข้าคลัง</button>
@@ -8753,6 +8812,51 @@ function Dashboard({ currentUser, onLogout }) {
                         {lineNotifyTestStatus && (
                           <div style={{ marginTop: '8px', fontSize: '0.85rem', fontWeight: 'bold' }}>
                             {lineNotifyTestStatus}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="console-card" style={{ border: '1px solid rgba(59, 130, 246, 0.35)', backgroundColor: 'rgba(59, 130, 246, 0.05)' }}>
+                        <h5 style={{ margin: '0 0 8px 0', color: '#60a5fa', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          💬 แจ้งเตือนวันหมดสัญญา License ผ่าน Lark
+                        </h5>
+                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0 0 12px 0' }}>
+                          ระบบตรวจทุกวันเวลา 09:00 น. และแจ้งห้องแชท Lark ล่วงหน้า 3 วัน โดยไม่ส่งรายการเดิมซ้ำในวันเดียว
+                        </p>
+                        <div style={{ marginBottom: '8px', fontSize: '0.82rem', color: larkWebhookConfigured ? '#10b981' : '#f59e0b', fontWeight: 700 }}>
+                          {larkWebhookConfigured ? '● ตั้งค่า Webhook แล้ว' : '● ยังไม่ได้ตั้งค่า Webhook'}
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                          <input
+                            type="password"
+                            value={larkWebhookInput}
+                            onChange={(event) => setLarkWebhookInput(event.target.value)}
+                            placeholder="https://open.larksuite.com/open-apis/bot/v2/hook/..."
+                            className="console-input"
+                            style={{ flex: 1, minWidth: '260px' }}
+                          />
+                          <button
+                            type="button"
+                            onClick={handleSaveLarkWebhook}
+                            disabled={larkWebhookSaving}
+                            className="sidebar-btn"
+                            style={{ width: 'auto', padding: '8px 16px', backgroundColor: '#2563eb', border: 'none', color: 'white' }}
+                          >
+                            {larkWebhookSaving ? 'กำลังดำเนินการ...' : 'บันทึก Webhook'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleTestLarkWebhook}
+                            disabled={larkWebhookSaving || (!larkWebhookInput.trim() && !larkWebhookConfigured)}
+                            className="sidebar-btn"
+                            style={{ width: 'auto', padding: '8px 16px', backgroundColor: '#0ea5e9', border: 'none', color: 'white' }}
+                          >
+                            ทดสอบส่งเข้า Lark
+                          </button>
+                        </div>
+                        {larkWebhookStatus && (
+                          <div style={{ marginTop: '8px', fontSize: '0.85rem', fontWeight: 'bold' }}>
+                            {larkWebhookStatus}
                           </div>
                         )}
                       </div>

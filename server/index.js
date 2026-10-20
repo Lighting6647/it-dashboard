@@ -7,6 +7,7 @@ import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import * as XLSX from 'xlsx/xlsx.mjs';
 import * as fs from 'fs';
+import { isAllowedLarkWebhook, sendLarkText } from './licenseExpiryReminder.js';
 XLSX.set_fs(fs);
 
 dotenv.config();
@@ -630,6 +631,23 @@ async function initDb() {
           id BIGSERIAL PRIMARY KEY,
           created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
           snapshot JSONB NOT NULL
+        )
+      `);
+
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS system_settings (
+          setting_key VARCHAR(100) PRIMARY KEY,
+          setting_value TEXT NOT NULL,
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `);
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS notification_delivery_log (
+          channel VARCHAR(30) NOT NULL,
+          notification_key VARCHAR(128) NOT NULL,
+          notification_date DATE NOT NULL,
+          sent_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          PRIMARY KEY (channel, notification_key, notification_date)
         )
       `);
 
@@ -1907,6 +1925,66 @@ app.post('/api/reset-database', requireRole('admin'), async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   } finally {
     client.release();
+  }
+});
+
+app.get('/api/lark-license-settings', requireRole('admin'), async (_req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT setting_value, updated_at FROM system_settings WHERE setting_key = 'lark_license_webhook'`,
+    );
+    res.json({
+      configured: Boolean(result.rows[0]?.setting_value),
+      updatedAt: result.rows[0]?.updated_at || null,
+      schedule: '09:00 Asia/Bangkok',
+      daysAhead: 3,
+    });
+  } catch (error) {
+    console.error('Error loading Lark license settings:', error);
+    res.status(500).json({ error: 'โหลดการตั้งค่า Lark ไม่สำเร็จ' });
+  }
+});
+
+app.post('/api/lark-license-settings', requireRole('admin'), async (req, res) => {
+  const webhookUrl = String(req.body?.webhookUrl || '').trim();
+  if (!isAllowedLarkWebhook(webhookUrl)) {
+    return res.status(400).json({ error: 'กรุณากรอก Lark Bot Webhook URL ที่ถูกต้อง' });
+  }
+  try {
+    await pool.query(`
+      INSERT INTO system_settings (setting_key, setting_value, updated_at)
+      VALUES ('lark_license_webhook', $1, NOW())
+      ON CONFLICT (setting_key) DO UPDATE
+      SET setting_value = EXCLUDED.setting_value, updated_at = NOW()
+    `, [webhookUrl]);
+    res.json({ success: true, message: 'บันทึก Lark Webhook สำเร็จ' });
+  } catch (error) {
+    console.error('Error saving Lark license settings:', error);
+    res.status(500).json({ error: 'บันทึกการตั้งค่า Lark ไม่สำเร็จ' });
+  }
+});
+
+app.post('/api/test-lark-license-notify', requireRole('admin'), async (req, res) => {
+  try {
+    const suppliedWebhook = String(req.body?.webhookUrl || '').trim();
+    let webhookUrl = suppliedWebhook;
+    if (!webhookUrl) {
+      const result = await pool.query(
+        `SELECT setting_value FROM system_settings WHERE setting_key = 'lark_license_webhook'`,
+      );
+      webhookUrl = result.rows[0]?.setting_value || process.env.LARK_LICENSE_WEBHOOK_URL || '';
+    }
+    if (!isAllowedLarkWebhook(webhookUrl)) {
+      return res.status(400).json({ error: 'ยังไม่ได้ตั้งค่า Lark Bot Webhook URL' });
+    }
+    await sendLarkText(
+      webhookUrl,
+      '🔔 ทดสอบแจ้งเตือนวันหมดสัญญา License\nระบบ FERN AESTHETIQUE IT Operations เชื่อมต่อห้องแชท Lark สำเร็จ',
+    );
+    res.json({ success: true, message: 'ส่งข้อความทดสอบเข้า Lark สำเร็จ' });
+  } catch (error) {
+    console.error('Lark webhook test failed:', error);
+    res.status(400).json({ error: error.message || 'ส่งข้อความทดสอบเข้า Lark ไม่สำเร็จ' });
   }
 });
 
