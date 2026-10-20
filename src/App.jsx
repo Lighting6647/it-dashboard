@@ -4,7 +4,7 @@ import LarkForm from './pages/LarkForm';
 import Login from './pages/Login';
 import UserAccessManager from './pages/UserAccessManager';
 import fernAesthetiqueLogo from './assets/fern-aesthetique-logo.png';
-import { authFetch, clearAuth, getStoredAuth, ROLE_LABELS } from './auth';
+import { authFetch, canAdministerSystem, canEditOperationalData, clearAuth, getStoredAuth, ROLE_LABELS } from './auth';
 import { countPendingTicketClosures } from './utils/ticketMetrics';
 import Chart from 'chart.js/auto';
 import gsap from 'gsap';
@@ -1873,7 +1873,8 @@ const normalizeAssetLookup = (value, convertThaiKeyboard = false) => {
 
 function Dashboard({ currentUser, onLogout }) {
   const navigate = useNavigate();
-  const isAdmin = currentUser?.role === 'admin';
+  const isAdmin = canAdministerSystem(currentUser?.role);
+  const canEditOperations = canEditOperationalData(currentUser?.role);
   const canRequestService = ['admin', 'staff'].includes(currentUser?.role);
   const [data, setData] = useState(() => {
     const saved = localStorage.getItem('it_dashboard_data');
@@ -2151,6 +2152,14 @@ function Dashboard({ currentUser, onLogout }) {
     document.body.classList.add(scopeClass);
     window.addEventListener('afterprint', cleanup, { once: true });
     window.requestAnimationFrame(() => window.print());
+  };
+
+  const requireOperationalAccess = (openMenu) => {
+    if (!canEditOperations) {
+      alert('บัญชีนี้ไม่มีสิทธิ์แก้ไขข้อมูลงาน');
+      return;
+    }
+    openMenu();
   };
 
   const requireAdminAccess = (openMenu) => {
@@ -5793,7 +5802,7 @@ function Dashboard({ currentUser, onLogout }) {
         </div>
 
         {/* Data Customizer Trigger */}
-        {isAdmin && <div className="control-group">
+        {canEditOperations && <div className="control-group">
           <div 
             onClick={() => setSidebarExpanded(prev => ({ ...prev, mgmt: !prev.mgmt }))}
             style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.05)', marginBottom: '8px' }}
@@ -5803,11 +5812,11 @@ function Dashboard({ currentUser, onLogout }) {
           </div>
           {sidebarExpanded.mgmt && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <button onClick={() => requireAdminAccess(openEditModal)} className="sidebar-btn">
+              <button onClick={() => requireOperationalAccess(openEditModal)} className="sidebar-btn">
                 <Edit3 size={16} />
                 แก้ไขตัวเลขเดือนนี้
               </button>
-              <button onClick={() => requireAdminAccess(() => {
+              <button onClick={() => requireOperationalAccess(() => {
                 setConsoleMonth(currentMonth);
                 setActiveModal('fullConsole');
               })} className="sidebar-btn secondary">
@@ -5815,7 +5824,7 @@ function Dashboard({ currentUser, onLogout }) {
                 ปรับเปลี่ยนข้อมูลทั้งหมด
               </button>
 
-              <button onClick={() => requireAdminAccess(() => {
+              <button onClick={() => requireOperationalAccess(() => {
                 setLarkFormType('asset');
                 setLarkTicketRole('user');
                 setLarkSubmitted(false);
@@ -5824,7 +5833,7 @@ function Dashboard({ currentUser, onLogout }) {
                 <Laptop size={16} />
                 ลงทะเบียนเครื่องเข้าคลัง
               </button>
-              <button onClick={() => requireAdminAccess(() => {
+              <button onClick={() => requireOperationalAccess(() => {
                 setAssetWorkflowRole('it');
                 setActiveModal('assetWorkflow');
               })} className="sidebar-btn" style={{ backgroundColor: '#4338ca', border: 'none', color: 'white' }}>
@@ -5832,7 +5841,7 @@ function Dashboard({ currentUser, onLogout }) {
                 IT อนุมัติการใช้งาน
                 <span className={`menu-count-badge ${pendingAssetApprovalCount > 0 ? 'has-items' : ''}`}>{pendingAssetApprovalCount}</span>
               </button>
-              <button onClick={() => requireAdminAccess(() => {
+              <button onClick={() => requireOperationalAccess(() => {
                 setLarkFormType('ticket');
                 setLarkTicketRole('it');
                 setLarkSubmitted(false);
@@ -5843,15 +5852,15 @@ function Dashboard({ currentUser, onLogout }) {
                 เมนูปิดงาน (IT Close)
                 <span className={`menu-count-badge ${pendingTicketCloseCount > 0 ? 'has-items' : ''}`}>{pendingTicketCloseCount}</span>
               </button>
-              <button onClick={() => requireAdminAccess(() => setActiveModal('userAccess'))} className="sidebar-btn user-access-menu-btn">
+              {isAdmin && <button onClick={() => requireAdminAccess(() => setActiveModal('userAccess'))} className="sidebar-btn user-access-menu-btn">
                 <ShieldCheck size={16} />
                 จัดการสิทธิ์ผู้ใช้งาน
-              </button>
-              <button onClick={() => requireAdminAccess(() => setActiveModal('vendorContracts'))} className="sidebar-btn user-access-menu-btn">
+              </button>}
+              <button onClick={() => requireOperationalAccess(() => setActiveModal('vendorContracts'))} className="sidebar-btn user-access-menu-btn">
                 <FileCode size={16} />
                 Vendor Contract
               </button>
-              <button onClick={() => requireAdminAccess(() => setActiveModal('projectRegistry'))} className="sidebar-btn user-access-menu-btn">
+              <button onClick={() => requireOperationalAccess(() => setActiveModal('projectRegistry'))} className="sidebar-btn user-access-menu-btn">
                 <Lightbulb size={16} />
                 ขึ้นระบบโปรเจกต์
               </button>
@@ -6184,7 +6193,7 @@ function Dashboard({ currentUser, onLogout }) {
                 onClick={() => setActiveModal('expiringSoftware')}
                 className="btn-details"
               >
-                {isAdmin ? 'ดูรายละเอียด / แก้ไข' : 'ดูรายละเอียด'}
+                {canEditOperations ? 'ดูรายละเอียด / แก้ไข' : 'ดูรายละเอียด'}
               </button>
             </div>
             <div className="metrics-row">
@@ -6243,10 +6252,10 @@ function Dashboard({ currentUser, onLogout }) {
               </h3>
               <button
                 type="button"
-                onClick={() => isAdmin ? openEditModal() : setActiveModal('securityDetails')}
+                onClick={() => canEditOperations ? openEditModal() : setActiveModal('securityDetails')}
                 className="btn-details"
               >
-                {isAdmin ? 'รายละเอียด / แก้ไข' : 'ดูรายละเอียด'}
+                {canEditOperations ? 'รายละเอียด / แก้ไข' : 'ดูรายละเอียด'}
               </button>
             </div>
             <div className="metrics-row">
@@ -6613,7 +6622,7 @@ function Dashboard({ currentUser, onLogout }) {
                               )}
                             </td>
                             <td>
-                              {isAdmin ? (
+                              {canEditOperations ? (
                                 <button
                                   className="workflow-edit-btn"
                                   onClick={() => editAssetRequest(request)}
@@ -6793,7 +6802,7 @@ function Dashboard({ currentUser, onLogout }) {
                     <button className={assetReturnView === 'registry' ? 'active' : ''} onClick={() => setAssetReturnView('registry')}>ทะเบียนทรัพย์สินทั้งหมด</button>
                     <button
                       className={assetReturnView === 'inspection' ? 'active it-inspection' : 'it-inspection'}
-                      onClick={() => requireAdminAccess(() => setAssetReturnView('inspection'))}
+                      onClick={() => requireOperationalAccess(() => setAssetReturnView('inspection'))}
                     >
                       IT ตรวจรับ
                       {inspectionRequests.length > 0 && (
@@ -7368,7 +7377,7 @@ function Dashboard({ currentUser, onLogout }) {
               <button onClick={() => setActiveModal(null)} className="modal-close"><X size={20} /></button>
             </header>
             <div className="modal-body">
-              {isAdmin && <button
+              {canEditOperations && <button
                 type="button"
                 className="btn-details software-form-toggle no-print"
                 onClick={() => setSoftwareFormExpanded(previous => !previous)}
@@ -7378,7 +7387,7 @@ function Dashboard({ currentUser, onLogout }) {
                 {softwareFormExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                 {softwareFormExpanded ? 'ซ่อนฟอร์มเพิ่ม / แก้ไข License' : 'เปิดฟอร์มเพิ่ม / แก้ไข License'}
               </button>}
-              {isAdmin && softwareFormExpanded && <form onSubmit={saveSoftwareLicense} className="software-license-form no-print">
+              {canEditOperations && softwareFormExpanded && <form onSubmit={saveSoftwareLicense} className="software-license-form no-print">
                 <div className="form-grid">
                   <div className="form-group">
                     <label>ชื่อซอฟต์แวร์/โปรแกรม</label>
@@ -7643,7 +7652,7 @@ function Dashboard({ currentUser, onLogout }) {
                       <th>วันหมดสัญญา</th>
                       <th>อีเมลสมัคร</th>
                       <th>ผู้ใช้งานปัจจุบัน</th>
-                      {isAdmin && <th className="software-admin-column">จัดการ</th>}
+                      {canEditOperations && <th className="software-admin-column">จัดการ</th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -7651,7 +7660,7 @@ function Dashboard({ currentUser, onLogout }) {
                       groupedSoftwareLicenses.map(([department, rows]) => (
                         <Fragment key={department}>
                           <tr className="software-department-row">
-                            <td colSpan={isAdmin ? 12 : 11}>
+                            <td colSpan={canEditOperations ? 12 : 11}>
                               <span>Owner / แผนก</span>
                               <strong>{department}</strong>
                               <small>{rows.length.toLocaleString()} รายการ</small>
@@ -7670,7 +7679,7 @@ function Dashboard({ currentUser, onLogout }) {
                               <td>{soft.expiringDate || '-'}</td>
                               <td>{soft.registeredEmail || '-'}</td>
                               <td style={{ minWidth: '160px' }}>{soft.currentUsers || '-'}</td>
-                              {isAdmin && <td className="software-admin-column">
+                              {canEditOperations && <td className="software-admin-column">
                                 <div className="software-row-actions">
                                   <button type="button" className="btn-details" onClick={() => editSoftwareLicense(soft, originalIndex)}>แก้ไข</button>
                                   <button type="button" className="console-delete-btn" onClick={() => deleteSoftwareLicense(originalIndex)}>ลบ</button>
@@ -7682,7 +7691,7 @@ function Dashboard({ currentUser, onLogout }) {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={isAdmin ? 12 : 11} style={{ textAlign: 'center' }}>
+                        <td colSpan={canEditOperations ? 12 : 11} style={{ textAlign: 'center' }}>
                           {(activeData.softwareExpiringDetails || []).length > 0
                             ? 'ไม่พบรายการที่ตรงกับการค้นหาหรือตัวกรอง'
                             : 'ยังไม่มีรายละเอียด License'}
@@ -7694,7 +7703,7 @@ function Dashboard({ currentUser, onLogout }) {
                     <tr className="software-total-row">
                       <td colSpan="5">รวมราคา ({filteredSoftwareLicenses.length.toLocaleString()} รายการ)</td>
                       <td>{formatThaiBaht(filteredSoftwareTotalCost)}</td>
-                      <td colSpan={isAdmin ? 6 : 5}></td>
+                      <td colSpan={canEditOperations ? 6 : 5}></td>
                     </tr>
                   </tfoot>
                 </table>
@@ -8112,7 +8121,7 @@ function Dashboard({ currentUser, onLogout }) {
                 <button onClick={() => setConsoleTab('projects')} className={`console-tab-btn ${consoleTab === 'projects' ? 'active' : ''}`}>🗒️ โครงการ & ข้อแนะนำ</button>
                 <button onClick={() => setConsoleTab('assets')} className={`console-tab-btn ${consoleTab === 'assets' ? 'active' : ''}`}>💻 คลังทรัพย์สิน IT</button>
                 <button onClick={() => setConsoleTab('tickets')} className={`console-tab-btn ${consoleTab === 'tickets' ? 'active' : ''}`}>🚨 ประวัติงาน Support</button>
-                <button onClick={() => { setConsoleTab('backup'); loadLarkLicenseSettings(); }} className={`console-tab-btn ${consoleTab === 'backup' ? 'active' : ''}`}>💾 สำรอง & รีเซ็ตระบบ</button>
+                {isAdmin && <button onClick={() => { setConsoleTab('backup'); loadLarkLicenseSettings(); }} className={`console-tab-btn ${consoleTab === 'backup' ? 'active' : ''}`}>💾 สำรอง & รีเซ็ตระบบ</button>}
               </nav>
               {consoleTab === 'assets' && editingAssetSn === null && (
                 <button type="button" onClick={handleAddAsset} className="btn-save asset-add-topbar-btn">เพิ่มทรัพย์สินเข้าคลัง</button>
@@ -8760,7 +8769,7 @@ function Dashboard({ currentUser, onLogout }) {
                 })()}
 
                 {/* TAB 6: BACKUP & SYSTEM RESET */}
-                {consoleTab === 'backup' && (
+                {isAdmin && consoleTab === 'backup' && (
                   <div>
                     <h4 className="console-title">💾 สำรองข้อมูลและรีเซ็ตการตั้งค่าระบบ</h4>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>

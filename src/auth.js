@@ -34,3 +34,11 @@ export const ROLE_LABELS = {
   staff: 'ผู้ใช้งานทั่วไป',
   admin: 'ผู้ดูแล IT'
 };
+
+export function canEditOperationalData(role) {
+  return role === 'staff' || role === 'admin';
+}
+
+export function canAdministerSystem(role) {
+  return role === 'admin';
+}

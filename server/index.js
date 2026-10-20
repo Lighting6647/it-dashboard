@@ -9,6 +9,7 @@ import * as XLSX from 'xlsx/xlsx.mjs';
 import * as fs from 'fs';
 import { isAllowedLarkWebhook, sendLarkText } from './licenseExpiryReminder.js';
 import { runLicenseExpiryReminder } from './runLicenseExpiryReminder.js';
+import { ROLE_LEVEL, requireRole } from './roleAccess.js';
 XLSX.set_fs(fs);
 
 dotenv.config();
@@ -29,7 +30,6 @@ const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH ||
 const AUTH_TOKEN_SECRET = process.env.AUTH_TOKEN_SECRET ||
   crypto.createHash('sha256').update(`it-dashboard:${ADMIN_PASSWORD_HASH}`).digest('hex');
 const AUTH_TOKEN_TTL_SECONDS = 8 * 60 * 60;
-const ROLE_LEVEL = { viewer: 1, staff: 2, admin: 3 };
 
 function hashPassword(password) {
   return crypto.createHash('sha256').update(String(password || '')).digest('hex');
@@ -172,15 +172,6 @@ async function sendLineNotify(message) {
     console.error('LINE Notify Error:', err.message);
     return false;
   }
-}
-
-function requireRole(minimumRole) {
-  return (req, res, next) => {
-    if (!req.user || ROLE_LEVEL[req.user.role] < ROLE_LEVEL[minimumRole]) {
-      return res.status(403).json({ message: 'บัญชีนี้ไม่มีสิทธิ์ดำเนินการ' });
-    }
-    next();
-  };
 }
 
 function asyncRoute(handler) {
@@ -1038,7 +1029,7 @@ app.post('/api/tickets', requireRole('staff'), async (req, res) => {
   }
 });
 
-app.patch('/api/tickets/:sn/close', requireRole('admin'), async (req, res) => {
+app.patch('/api/tickets/:sn/close', requireRole('staff'), async (req, res) => {
   const sn = Number(req.params.sn);
   const { responder, duration, cause, status, cost } = req.body || {};
   if (!Number.isInteger(sn) || sn <= 0 || !String(responder || '').trim()) {
@@ -1096,7 +1087,7 @@ app.patch('/api/tickets/:sn/close', requireRole('admin'), async (req, res) => {
   }
 });
 
-app.patch('/api/assets/:sn', requireRole('admin'), async (req, res) => {
+app.patch('/api/assets/:sn', requireRole('staff'), async (req, res) => {
   const sn = Number(req.params.sn);
   const {
     user, position, itemType, additionalEquipment, deviceSerial, status, notes,
@@ -1359,7 +1350,7 @@ app.get('/api/data-integrity/months', async (_req, res) => {
   }
 });
 
-app.patch('/api/asset-requests/:id', requireRole('admin'), async (req, res) => {
+app.patch('/api/asset-requests/:id', requireRole('staff'), async (req, res) => {
   const id = Number(req.params.id);
   const { requester, department, itemType, purpose, dueDate, notes, estimatedPrice } = req.body;
   const normalizedEstimatedPrice = Number(estimatedPrice || 0);
@@ -1444,10 +1435,6 @@ app.patch('/api/asset-requests/:id/action', requireRole('staff'), async (req, re
   if (!Number.isInteger(id) || !allowedActions.includes(action)) {
     return res.status(400).json({ error: 'คำสั่งไม่ถูกต้อง' });
   }
-  if (action !== 'request_return' && req.user.role !== 'admin') {
-    return res.status(403).json({ error: 'เฉพาะผู้ดูแล IT เท่านั้นที่ดำเนินการขั้นตอนนี้ได้' });
-  }
-
   let client;
   try {
     client = await pool.connect();
@@ -1678,7 +1665,7 @@ app.get('/api/inventory-data', (req, res) => {
   }
 });
 
-app.post('/api/sync-all', requireRole('admin'), async (req, res) => {
+app.post('/api/sync-all', requireRole('staff'), async (req, res) => {
   const { data, assetsList } = req.body;
   if (!data || !assetsList) {
     return res.status(400).json({ error: 'Missing data or assetsList' });
