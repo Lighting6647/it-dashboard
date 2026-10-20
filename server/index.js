@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import * as XLSX from 'xlsx/xlsx.mjs';
 import * as fs from 'fs';
 import { isAllowedLarkWebhook, sendLarkText } from './licenseExpiryReminder.js';
+import { runLicenseExpiryReminder } from './runLicenseExpiryReminder.js';
 XLSX.set_fs(fs);
 
 dotenv.config();
@@ -1985,6 +1986,16 @@ app.post('/api/test-lark-license-notify', requireRole('admin'), async (req, res)
   } catch (error) {
     console.error('Lark webhook test failed:', error);
     res.status(400).json({ error: error.message || 'ส่งข้อความทดสอบเข้า Lark ไม่สำเร็จ' });
+  }
+});
+
+app.post('/internal/license-reminder/run', async (_req, res) => {
+  try {
+    const result = await runLicenseExpiryReminder(pool);
+    res.json({ success: true, ...result });
+  } catch (error) {
+    console.error('Scheduled Lark license reminder failed:', error);
+    res.status(500).json({ success: false, error: 'ประมวลผลการแจ้งเตือน Lark ไม่สำเร็จ' });
   }
 });
 

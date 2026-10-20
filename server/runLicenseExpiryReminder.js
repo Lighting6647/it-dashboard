@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import dotenv from 'dotenv';
 import pg from 'pg';
+import { pathToFileURL } from 'url';
 
 import {
   buildLicenseExpiryMessage,
@@ -9,14 +10,6 @@ import {
 } from './licenseExpiryReminder.js';
 
 dotenv.config();
-
-const dbUrl = String(process.env.DATABASE_URL || '').replace(/[?&]sslmode=[^&]*/i, '');
-const isRenderInternal = dbUrl.includes('@dpg-') && !dbUrl.includes('.');
-const pool = new pg.Pool({
-  connectionString: dbUrl,
-  ssl: (dbUrl && !isRenderInternal) ? { rejectUnauthorized: false } : false,
-  connectionTimeoutMillis: 30000,
-});
 
 function bangkokDateText(date = new Date()) {
   return new Intl.DateTimeFormat('en-CA', {
@@ -36,8 +29,7 @@ function reminderKey(license) {
   ].map((value) => String(value || '').trim()).join('|')).digest('hex');
 }
 
-async function run() {
-  if (!dbUrl) throw new Error('ไม่พบ DATABASE_URL');
+export async function runLicenseExpiryReminder(pool, { now = new Date() } = {}) {
   const client = await pool.connect();
   try {
     await client.query(`
@@ -63,7 +55,7 @@ async function run() {
     const webhookUrl = settingsResult.rows[0]?.setting_value || process.env.LARK_LICENSE_WEBHOOK_URL || '';
     if (!webhookUrl) {
       console.log('Lark license reminder skipped: webhook is not configured.');
-      return;
+      return { sent: 0, reason: 'not_configured' };
     }
 
     const monthResult = await client.query(`
@@ -74,10 +66,10 @@ async function run() {
     `);
     if (!monthResult.rows.length) {
       console.log('Lark license reminder skipped: no monthly data.');
-      return;
+      return { sent: 0, reason: 'no_monthly_data' };
     }
 
-    const today = bangkokDateText();
+    const today = bangkokDateText(now);
     const candidates = findLicensesExpiringInDays(
       monthResult.rows[0].software_expiring_details || [],
       today,
@@ -97,7 +89,7 @@ async function run() {
 
     if (!unsent.length) {
       console.log(`Lark license reminder: no new contracts expiring in 3 days (${today}).`);
-      return;
+      return { sent: 0, reason: 'no_new_expirations' };
     }
 
     await sendLarkText(webhookUrl, buildLicenseExpiryMessage(unsent.map(({ license }) => license), today, 3));
@@ -109,14 +101,31 @@ async function run() {
       `, [key, today]);
     }
     console.log(`Lark license reminder sent: ${unsent.length} contract(s).`);
+    return { sent: unsent.length, reason: 'sent' };
   } finally {
     client.release();
   }
 }
 
-run()
-  .catch((error) => {
+async function runFromCommandLine() {
+  const dbUrl = String(process.env.DATABASE_URL || '').replace(/[?&]sslmode=[^&]*/i, '');
+  if (!dbUrl) throw new Error('ไม่พบ DATABASE_URL');
+  const isRenderInternal = dbUrl.includes('@dpg-') && !dbUrl.includes('.');
+  const pool = new pg.Pool({
+    connectionString: dbUrl,
+    ssl: (dbUrl && !isRenderInternal) ? { rejectUnauthorized: false } : false,
+    connectionTimeoutMillis: 30000,
+  });
+  try {
+    await runLicenseExpiryReminder(pool);
+  } finally {
+    await pool.end();
+  }
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  runFromCommandLine().catch((error) => {
     console.error('Lark license reminder failed:', error);
     process.exitCode = 1;
-  })
-  .finally(() => pool.end());
+  });
+}
