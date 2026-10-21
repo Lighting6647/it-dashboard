@@ -497,6 +497,10 @@ body {
     border-bottom-color: color-mix(in srgb, var(--success) 40%, var(--border-color));
 }
 
+.improvement-section .embedded-section-header {
+    border-bottom-color: color-mix(in srgb, var(--danger) 40%, var(--border-color));
+}
+
 .embedded-dashboard-section .compact-chart {
     height: 120px;
 }
@@ -3587,9 +3591,6 @@ body.modal-open { overflow: auto; overflow-y: auto; }
 
     .dashboard-grid > .card { min-width: 0; }
 
-    .dashboard-grid > .improvement-card {
-        grid-column: 2;
-    }
 }
 
 @media screen and (min-width: 768px) and (max-width: 1439px) {

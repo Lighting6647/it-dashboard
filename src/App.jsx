@@ -6062,6 +6062,40 @@ function Dashboard({ currentUser, onLogout }) {
                 <div className="metric-value highlight-danger">{monitoredUnverified} เครื่อง</div>
               </div>
             </div>
+            <section className="embedded-dashboard-section improvement-section" aria-labelledby="improvement-section-title">
+              <div className="card-header embedded-section-header">
+                <h3 className="card-title" id="improvement-section-title">
+                  <span className="card-icon"><Lightbulb size={18} style={{ color: 'var(--danger)' }} /></span>
+                  การปรับปรุงและเทคโนโลยี (Improvement)
+                </h3>
+              </div>
+              <div className="metrics-row">
+                <div className="metric-item">
+                  <div className="metric-label">Automation ที่ทำเสร็จ</div>
+                  <div className="metric-value highlight-primary">{improvementMetrics.automationsDone} รายการ</div>
+                </div>
+                <div className="metric-item">
+                  <div className="metric-label">AI ที่นำมาประยุกต์ใช้</div>
+                  <div className="metric-value highlight-secondary">{improvementMetrics.aiApps} โมเดล</div>
+                </div>
+                <div className="metric-item full-width">
+                  <div className="metric-label">ประหยัดชั่วโมงการทำงาน</div>
+                  <div className="metric-value highlight-success">{improvementMetrics.hoursSaved.toLocaleString()} ชั่วโมง/เดือน</div>
+                </div>
+              </div>
+              <div className="project-list">
+                <div className="metric-label" style={{ marginBottom: '2px' }}>โครงการหลักที่กำลังดำเนินการ:</div>
+                {activeData.ongoingProjects.map((proj, idx) => (
+                  <div key={idx} className="project-item">
+                    <div className="project-item-title">{proj.title}</div>
+                    <div className="project-item-desc">
+                      {proj.desc}
+                      {proj.projectType && ` • ${proj.projectType} • ${proj.status} • คืบหน้า ${Number(proj.progress || 0)}%`}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
           </article>
 
           {/* CARD 1: ASSETS */}
@@ -6307,42 +6341,6 @@ function Dashboard({ currentUser, onLogout }) {
                 <CircularProgress value={activeData.mfaCoverage} label="MFA Coverage" />
               </div>
             </section>
-          </article>
-
-          {/* CARD 6: IMPROVEMENT */}
-          <article className="card improvement-card">
-            <div className="card-header">
-              <h3 className="card-title">
-                <span className="card-icon"><Lightbulb size={18} style={{ color: 'var(--danger)' }} /></span>
-                การปรับปรุงและเทคโนโลยี (Improvement)
-              </h3>
-            </div>
-            <div className="metrics-row">
-              <div className="metric-item">
-                <div className="metric-label">Automation ที่ทำเสร็จ</div>
-                <div className="metric-value highlight-primary">{improvementMetrics.automationsDone} รายการ</div>
-              </div>
-              <div className="metric-item">
-                <div className="metric-label">AI ที่นำมาประยุกต์ใช้</div>
-                <div className="metric-value highlight-secondary">{improvementMetrics.aiApps} โมเดล</div>
-              </div>
-              <div className="metric-item full-width">
-                <div className="metric-label">ประหยัดชั่วโมงการทำงาน</div>
-                <div className="metric-value highlight-success">{improvementMetrics.hoursSaved.toLocaleString()} ชั่วโมง/เดือน</div>
-              </div>
-            </div>
-            <div className="project-list">
-              <div className="metric-label" style={{ marginBottom: '2px' }}>โครงการหลักที่กำลังดำเนินการ:</div>
-              {activeData.ongoingProjects.map((proj, idx) => (
-                <div key={idx} className="project-item">
-                  <div className="project-item-title">{proj.title}</div>
-                  <div className="project-item-desc">
-                    {proj.desc}
-                    {proj.projectType && ` • ${proj.projectType} • ${proj.status} • คืบหน้า ${Number(proj.progress || 0)}%`}
-                  </div>
-                </div>
-              ))}
-            </div>
           </article>
 
         </section>
