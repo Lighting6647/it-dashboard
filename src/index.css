@@ -476,6 +476,31 @@ body {
 .card.repair-card::before { background-color: var(--warning); }
 .card.improvement-card::before { background-color: var(--danger); }
 
+.embedded-dashboard-section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: auto;
+    padding-top: 18px;
+    border-top: 1px solid var(--border-color);
+}
+
+.embedded-section-header {
+    padding-bottom: 12px;
+}
+
+.repair-section .embedded-section-header {
+    border-bottom-color: color-mix(in srgb, var(--warning) 40%, var(--border-color));
+}
+
+.security-section .embedded-section-header {
+    border-bottom-color: color-mix(in srgb, var(--success) 40%, var(--border-color));
+}
+
+.embedded-dashboard-section .compact-chart {
+    height: 120px;
+}
+
 .card-header {
     display: flex;
     justify-content: space-between;
@@ -3556,11 +3581,15 @@ body.modal-open { overflow: auto; overflow-y: auto; }
     }
 
     .dashboard-grid {
-        grid-template-columns: repeat(5, minmax(0, 1fr));
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: clamp(12px, 1vw, 20px);
     }
 
     .dashboard-grid > .card { min-width: 0; }
+
+    .dashboard-grid > .improvement-card {
+        grid-column: 2;
+    }
 }
 
 @media screen and (min-width: 768px) and (max-width: 1439px) {
@@ -3665,6 +3694,11 @@ body.modal-open { overflow: auto; overflow-y: auto; }
         min-width: 0;
         padding: 13px;
         border-radius: 16px;
+    }
+
+    .embedded-dashboard-section {
+        gap: 12px;
+        padding-top: 14px;
     }
 
     .card-header {

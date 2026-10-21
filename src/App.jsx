@@ -6180,6 +6180,44 @@ function Dashboard({ currentUser, onLogout }) {
                 <div className="metric-value highlight-warning">{activeData.csat.toFixed(1)} / 5.0</div>
               </div>
             </div>
+            <section className="embedded-dashboard-section repair-section" aria-labelledby="repair-section-title">
+              <div className="card-header embedded-section-header">
+                <h3 className="card-title" id="repair-section-title">
+                  <span className="card-icon"><Wrench size={18} style={{ color: 'var(--warning)' }} /></span>
+                  การซ่อมบำรุงและแผนก (Repair)
+                </h3>
+                <button onClick={() => setActiveModal('topBrokenDevices')} className="btn-details">
+                  ดู Top 10 เสียบ่อย
+                </button>
+              </div>
+              <div className="metrics-row">
+                <div className="metric-item">
+                  <div className="metric-label">จำนวนงานซ่อม</div>
+                  <div className="metric-value highlight-warning">{activeData.repairCount} ครั้ง</div>
+                </div>
+                <div className="metric-item">
+                  <div className="metric-label">ค่าซ่อมบำรุงสะสม</div>
+                  <div className="metric-value">{formatThaiBaht(activeData.repairCost)}</div>
+                </div>
+              </div>
+              <div className="card-chart-container compact-chart">
+                <canvas ref={repairCanvasRef}></canvas>
+              </div>
+              <div className="repair-list-summary">
+                <div className="metric-label" style={{ marginBottom: '2px' }}>อุปกรณ์แจ้งซ่อมสูงสุด 3 อันดับแรก:</div>
+                {activeData.topBrokenDevices.filter(d => d.count > 0).slice(0, 3).map((device, idx) => (
+                  <div key={idx} className="repair-list-item">
+                    <span className="repair-item-name">{device.name}</span>
+                    <span className="repair-item-count">{device.count} เครื่อง</span>
+                  </div>
+                ))}
+                {activeData.topBrokenDevices.filter(d => d.count > 0).length === 0 && (
+                  <div className="repair-list-item">
+                    <span className="repair-item-name">ไม่มีประวัติอุปกรณ์ชำรุดในเดือนนี้</span>
+                  </div>
+                )}
+              </div>
+            </section>
           </article>
 
           {/* CARD 3: SOFTWARE */}
@@ -6241,79 +6279,34 @@ function Dashboard({ currentUser, onLogout }) {
             <div className="card-chart-container">
               <canvas ref={softwareCanvasRef}></canvas>
             </div>
-          </article>
-
-          {/* CARD 4: CYBER SECURITY */}
-          <article className="card security-card">
-            <div className="card-header">
-              <h3 className="card-title">
-                <span className="card-icon"><ShieldCheck size={18} style={{ color: 'var(--success)' }} /></span>
-                ความปลอดภัยข้อมูล (Security)
-              </h3>
-              <button
-                type="button"
-                onClick={() => canEditOperations ? openEditModal() : setActiveModal('securityDetails')}
-                className="btn-details"
-              >
-                {canEditOperations ? 'รายละเอียด / แก้ไข' : 'ดูรายละเอียด'}
-              </button>
-            </div>
-            <div className="metrics-row">
-              <div className="metric-item full-width">
-                <div className="metric-label">Security Incident (เหตุการณ์คุกคาม)</div>
-                <div className={`metric-value ${activeData.securityIncidents > 0 ? 'highlight-danger' : 'highlight-success'}`}>
-                  {activeData.securityIncidents} ครั้ง
+            <section className="embedded-dashboard-section security-section" aria-labelledby="security-section-title">
+              <div className="card-header embedded-section-header">
+                <h3 className="card-title" id="security-section-title">
+                  <span className="card-icon"><ShieldCheck size={18} style={{ color: 'var(--success)' }} /></span>
+                  ความปลอดภัยข้อมูล (Security)
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => canEditOperations ? openEditModal() : setActiveModal('securityDetails')}
+                  className="btn-details"
+                >
+                  {canEditOperations ? 'รายละเอียด / แก้ไข' : 'ดูรายละเอียด'}
+                </button>
+              </div>
+              <div className="metrics-row">
+                <div className="metric-item full-width">
+                  <div className="metric-label">Security Incident (เหตุการณ์คุกคาม)</div>
+                  <div className={`metric-value ${activeData.securityIncidents > 0 ? 'highlight-danger' : 'highlight-success'}`}>
+                    {activeData.securityIncidents} ครั้ง
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="gauges-container">
-              <CircularProgress value={activeData.backupSuccess} label="Backup สำเร็จ" />
-              <CircularProgress value={activeData.antivirusCoverage} label="Antivirus Coverage" />
-              <CircularProgress value={activeData.mfaCoverage} label="MFA Coverage" />
-            </div>
-          </article>
-
-          {/* CARD 5: REPAIR & COST */}
-          <article className="card repair-card">
-            <div className="card-header">
-              <h3 className="card-title">
-                <span className="card-icon"><Wrench size={18} style={{ color: 'var(--warning)' }} /></span>
-                การซ่อมบำรุงและแผนก (Repair)
-              </h3>
-              <button 
-                onClick={() => setActiveModal('topBrokenDevices')} 
-                className="btn-details"
-              >
-                ดู Top 10 เสียบ่อย
-              </button>
-            </div>
-            <div className="metrics-row">
-              <div className="metric-item">
-                <div className="metric-label">จำนวนงานซ่อม</div>
-                <div className="metric-value highlight-warning">{activeData.repairCount} ครั้ง</div>
+              <div className="gauges-container">
+                <CircularProgress value={activeData.backupSuccess} label="Backup สำเร็จ" />
+                <CircularProgress value={activeData.antivirusCoverage} label="Antivirus Coverage" />
+                <CircularProgress value={activeData.mfaCoverage} label="MFA Coverage" />
               </div>
-              <div className="metric-item">
-                <div className="metric-label">ค่าซ่อมบำรุงสะสม</div>
-                <div className="metric-value">{formatThaiBaht(activeData.repairCost)}</div>
-              </div>
-            </div>
-            <div className="card-chart-container">
-              <canvas ref={repairCanvasRef}></canvas>
-            </div>
-            <div className="repair-list-summary">
-              <div className="metric-label" style={{ marginBottom: '2px' }}>อุปกรณ์แจ้งซ่อมสูงสุด 3 อันดับแรก:</div>
-              {activeData.topBrokenDevices.filter(d => d.count > 0).slice(0, 3).map((device, idx) => (
-                <div key={idx} className="repair-list-item">
-                  <span className="repair-item-name">{device.name}</span>
-                  <span className="repair-item-count">{device.count} เครื่อง</span>
-                </div>
-              ))}
-              {activeData.topBrokenDevices.filter(d => d.count > 0).length === 0 && (
-                <div className="repair-list-item">
-                  <span className="repair-item-name">ไม่มีประวัติอุปกรณ์ชำรุดในเดือนนี้</span>
-                </div>
-              )}
-            </div>
+            </section>
           </article>
 
           {/* CARD 6: IMPROVEMENT */}
