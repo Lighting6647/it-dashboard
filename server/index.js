@@ -790,14 +790,6 @@ async function initDb() {
       await normalizeVacantAssetOwnership(client);
 
       await refreshOperationalCounters(client);
-    sendLineNotify(
-      `\n🚨 [แจ้งปัญหา IT ใหม่ #${nextSn}]\n` +
-      `👤 ผู้แจ้ง: ${complainant}\n` +
-      `💻 อุปกรณ์: ${deviceType} ${assetSerial ? `(${assetSerial})` : ''}\n` +
-      `⚠️ อาการ: ${issue}\n` +
-      `🎯 ความสำคัญ: ${priority || 'medium'}\n` +
-      `📅 วันที่: ${date}`
-    ).catch(() => {});
       console.log('Tables initialized successfully.');
     } finally {
       client.release();

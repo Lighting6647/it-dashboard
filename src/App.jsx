@@ -1888,7 +1888,13 @@ function Dashboard({ currentUser, onLogout }) {
   });
   const [assetsList, setAssetsList] = useState(() => {
     const saved = localStorage.getItem('it_dashboard_assets');
-    return saved ? repairThaiTextDeep(JSON.parse(saved)) : initialAssetsData;
+    if (!saved) return initialAssetsData;
+    try {
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? repairThaiTextDeep(parsed) : initialAssetsData;
+    } catch {
+      return initialAssetsData;
+    }
   });
   const [assetSearch, setAssetSearch] = useState('');
   const [assetDeptFilter, setAssetDeptFilter] = useState('');
