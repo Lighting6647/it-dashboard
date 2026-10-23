@@ -14,6 +14,30 @@ XLSX.set_fs(fs);
 
 dotenv.config();
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const SEED_DATA_PATH = path.join(__dirname, 'seed-data.json');
+let fallbackDbState = null;
+try {
+  if (fs.existsSync(SEED_DATA_PATH)) {
+    fallbackDbState = JSON.parse(fs.readFileSync(SEED_DATA_PATH, 'utf8'));
+    console.log('Loaded offline fallback dataset from server/seed-data.json');
+  }
+} catch (e) {
+  console.warn('Failed to load fallback seed data:', e);
+}
+
+function saveFallbackDbState() {
+  try {
+    if (fallbackDbState) {
+      fs.writeFileSync(SEED_DATA_PATH, JSON.stringify(fallbackDbState, null, 2), 'utf8');
+    }
+  } catch (e) {
+    console.warn('Could not persist fallback seed data:', e);
+  }
+}
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -882,7 +906,13 @@ app.get('/api/db-state', async (req, res) => {
 
     res.json({ data: dataObj, assetsList });
   } catch (err) {
-    console.error('Error fetching DB state:', err);
+    console.error('Error fetching DB state from PostgreSQL (using offline fallback):', err.message);
+    if (fallbackDbState) {
+      return res.json({
+        data: fallbackDbState.dashboard || {},
+        assetsList: fallbackDbState.assets || []
+      });
+    }
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
@@ -1253,7 +1283,10 @@ app.get('/api/asset-requests', async (_req, res) => {
       assigned_asset_sn: row.assigned_asset_sn === null ? null : Number(row.assigned_asset_sn)
     }))));
   } catch (err) {
-    console.error('Error fetching asset requests:', err);
+    console.error('Error fetching asset requests from PostgreSQL (using fallback):', err.message);
+    if (fallbackDbState?.assetRequests) {
+      return res.json(fallbackDbState.assetRequests);
+    }
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
@@ -1978,8 +2011,7 @@ app.post('/internal/license-reminder/run', async (_req, res) => {
   }
 });
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+
 
 app.use(express.static(path.join(__dirname, '../dist')));
 

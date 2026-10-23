@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Printer & Copier Usage Infographic Report - SN 322865</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-main: #0B1120;
+    --card-bg: #131E36;
+    --card-border: #1E293B;
+    --text-primary: #F8FAFC;
+    --text-secondary: #94A3B8;
+    --text-muted: #64748B;
+    --accent-blue: #38BDF8;
+    --accent-rose: #F43F5E;
+    --accent-amber: #F59E0B;
+    --accent-emerald: #10B981;
+    --accent-purple: #A855F7;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    font-family: 'Prompt', 'Plus Jakarta Sans', -apple-system, sans-serif;
+    line-height: 1.5;
+    padding: 24px 20px;
+    display: flex;
+    justify-content: center;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .infographic-container { width: 100%; max-width: 1200px; display: flex; flex-direction: column; gap: 20px; }
+
+  /* Interactive Toolbar & Drag & Drop */
+  .interactive-toolbar {
+    background: linear-gradient(135deg, #1A2644 0%, #111A30 100%);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    border-radius: 16px;
+    padding: 20px 24px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .toolbar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+
+  .toolbar-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .toolbar-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(56, 189, 248, 0.15);
+    color: var(--accent-blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+
+  .toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .btn-upload {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #0284C7 0%, #0369A1 100%);
+    color: #FFFFFF;
+    font-size: 13.5px;
+    font-weight: 600;
+    padding: 9px 18px;
+    border-radius: 10px;
+    cursor: pointer;
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    transition: all 0.2s ease;
+  }
+  .btn-upload:hover { background: #0284C7; transform: translateY(-1px); }
+
+  .btn-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(30, 41, 59, 0.7);
+    color: #E2E8F0;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 9px 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.1);
+    transition: all 0.2s ease;
+  }
+  .btn-action:hover { background: rgba(56, 189, 248, 0.15); border-color: var(--accent-blue); color: #FFFFFF; }
+
+  /* Drag & Drop Zone */
+  .dropzone {
+    border: 2px dashed rgba(56, 189, 248, 0.35);
+    background: rgba(15, 23, 42, 0.4);
+    border-radius: 12px;
+    padding: 22px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .dropzone:hover, .dropzone.dragover {
+    border-color: var(--accent-blue);
+    background: rgba(56, 189, 248, 0.08);
+    transform: scale(1.005);
+  }
+
+  .dropzone-icon { font-size: 30px; margin-bottom: 2px; }
+  .dropzone-text { font-size: 14px; color: #F1F5F9; }
+  .dropzone-text span { color: var(--accent-blue); text-decoration: underline; font-weight: 600; }
+  .dropzone-sub { font-size: 12px; color: var(--text-muted); }
+
+  .file-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: var(--accent-emerald);
+    padding: 4px 12px;
+    border-radius: 100px;
+    font-size: 12px;
+    margin-top: 6px;
+  }
+
+  /* Toast notification */
+  .toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .toast {
+    background: #1E293B;
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    border-left: 4px solid var(--accent-blue);
+    color: #FFFFFF;
+    padding: 12px 18px;
+    border-radius: 10px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    font-size: 13.5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: slideIn 0.3s ease;
+  }
+  .toast.success { border-left-color: var(--accent-emerald); }
+  .toast.error { border-left-color: var(--accent-rose); }
+
+  @keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  /* Header Card */
+  .header-card {
+    background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    border-radius: 18px;
+    padding: 24px 28px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+  }
+
+  .header-glow {
+    position: absolute; top: -50px; right: -50px; width: 260px; height: 260px;
+    background: radial-gradient(circle, rgba(56,189,248,0.2) 0%, rgba(99,102,241,0) 70%);
+    border-radius: 50%; pointer-events: none;
+  }
+
+  .header-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 16px; }
+  .badge-tag {
+    display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px;
+    background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3);
+    border-radius: 100px; color: var(--accent-blue); font-size: 12px; font-weight: 600; margin-bottom: 8px;
+  }
+  .badge-dot { width: 8px; height: 8px; background-color: var(--accent-emerald); border-radius: 50%; box-shadow: 0 0 8px var(--accent-emerald); }
+  .report-title { font-size: 26px; font-weight: 700; color: #FFFFFF; letter-spacing: -0.5px; display: flex; align-items: center; gap: 10px; }
+  .report-subtitle { color: var(--text-secondary); font-size: 14px; margin-top: 4px; }
+  .sn-box { text-align: right; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(56, 189, 248, 0.25); padding: 10px 18px; border-radius: 12px; }
+
+  .meta-pills { display: flex; gap: 10px; flex-wrap: wrap; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.08); }
+  .meta-item { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 6px 14px; font-size: 12.5px; display: flex; align-items: center; gap: 6px; }
+  .meta-item span.label { color: var(--text-muted); }
+  .meta-item span.value { color: #E2E8F0; font-weight: 600; font-family: 'Plus Jakarta Sans', sans-serif; }
+
+  /* Metric KPI Grid */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .kpi-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 20px; position: relative; overflow: hidden; }
+  .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; }
+  .kpi-card.total::before { background: linear-gradient(90deg, #38BDF8, #6366F1); }
+  .kpi-card.color::before { background: linear-gradient(90deg, #F43F5E, #FB7185); }
+  .kpi-card.bw::before { background: linear-gradient(90deg, #94A3B8, #CBD5E1); }
+  .kpi-card.scan::before { background: linear-gradient(90deg, #10B981, #34D399); }
+
+  .kpi-label { font-size: 13px; color: var(--text-secondary); font-weight: 500; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+  .kpi-icon { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 15px; }
+  .kpi-value { font-size: 32px; font-weight: 800; font-family: 'Plus Jakarta Sans', sans-serif; color: #FFFFFF; letter-spacing: -1px; line-height: 1.1; margin-bottom: 4px; }
+  .kpi-desc { font-size: 12px; color: var(--text-muted); }
+  .kpi-highlight { font-weight: 700; color: var(--accent-rose); }
+
+  /* Two Columns */
+  .grid-2col { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 18px; }
+  .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 22px; }
+  .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .card-title { font-size: 17px; font-weight: 700; color: #FFFFFF; display: flex; align-items: center; gap: 8px; }
+  .card-subtitle { font-size: 12px; color: var(--text-muted); }
+
+  .dept-item { margin-bottom: 15px; }
+  .dept-info { display: flex; justify-content: space-between; font-size: 13.5px; margin-bottom: 5px; }
+  .dept-name { font-weight: 600; color: #F1F5F9; display: flex; align-items: center; gap: 6px; }
+  .dept-badge { font-size: 11px; padding: 2px 7px; border-radius: 5px; font-family: 'Plus Jakarta Sans', sans-serif; }
+  .dept-stats { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; color: var(--text-primary); }
+  .dept-substats { color: var(--text-muted); font-size: 11.5px; font-weight: normal; }
+
+  .progress-bg { width: 100%; height: 9px; background: #1E293B; border-radius: 100px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 100px; transition: width 0.5s ease; }
+
+  .ratio-box { display: flex; align-items: center; justify-content: space-around; padding: 16px 0; background: rgba(15, 23, 42, 0.4); border-radius: 12px; margin-bottom: 16px; }
+  .circle-chart-wrapper { position: relative; width: 125px; height: 125px; }
+  .ratio-stats { display: flex; flex-direction: column; gap: 12px; }
+  .ratio-item { display: flex; align-items: center; gap: 10px; }
+  .ratio-legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+  .ratio-legend-title { font-size: 12px; color: var(--text-secondary); }
+  .ratio-legend-val { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 17px; font-weight: 700; color: #FFFFFF; }
+  .ratio-legend-pct { font-size: 11.5px; color: var(--text-muted); }
+
+  .insight-card {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%);
+    border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 16px; padding: 20px;
+  }
+  .insight-header { display: flex; align-items: center; gap: 8px; color: var(--accent-amber); font-weight: 700; font-size: 15px; margin-bottom: 12px; }
+  .insight-list { display: flex; flex-direction: column; gap: 10px; }
+  .insight-row {
+    display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: #CBD5E1;
+    background: rgba(15, 23, 42, 0.5); padding: 10px 12px; border-radius: 8px; border-left: 3px solid var(--accent-amber); line-height: 1.45;
+  }
+  .insight-row.alert { border-left-color: var(--accent-rose); }
+  .insight-row.success { border-left-color: var(--accent-emerald); }
+
+  /* Full Data Table Section */
+  .table-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 22px; }
+  .table-wrapper { width: 100%; overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; }
+  th { background: #18233C; color: var(--text-secondary); font-weight: 600; padding: 10px 8px; border-bottom: 1px solid #2B3A58; white-space: nowrap; font-size: 11.5px; }
+  td { padding: 9px 8px; border-bottom: 1px solid rgba(255,255,255,0.04); color: #E2E8F0; white-space: nowrap; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  tr.highlight-hr td { background: rgba(244, 63, 94, 0.06); }
+  tr.highlight-mkt td { background: rgba(56, 189, 248, 0.06); }
+  .num { font-family: 'Plus Jakarta Sans', sans-serif; text-align: right; }
+  .bold { font-weight: 700; }
+  .color-badge { color: #FB7185; font-weight: 600; }
+  .bw-badge { color: #94A3B8; }
+  .scan-badge { color: #34D399; }
+
+  .footer-note { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; color: var(--text-muted); font-size: 11.5px; margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.06); }
+
+  /* Signatures */
+  .signature-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 680px;
+    margin: 24px auto 0 auto;
+    gap: 32px;
+    padding-top: 18px;
+    border-top: 1px dashed rgba(255,255,255,0.1);
+  }
+  .sign-box { text-align: center; background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; padding: 16px 12px; }
+  .sign-line { width: 80%; margin: 28px auto 8px auto; border-bottom: 1px solid rgba(255,255,255,0.2); }
+  .sign-title { font-size: 11.5px; color: var(--text-muted); }
+
+  /* Print specific */
+  @media print {
+    body { background-color: #0B1120 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; padding: 0 !important; }
+    .no-print, .interactive-toolbar, .toast-container { display: none !important; }
+    .infographic-container { gap: 10px !important; }
+    .page-1-wrapper { gap: 10px !important; }
+    .header-card { padding: 14px 18px !important; }
+    .report-title { font-size: 20px !important; }
+    .report-subtitle { font-size: 12px !important; }
+    .sn-box { padding: 6px 12px !important; }
+    .meta-pills { padding-top: 8px !important; gap: 6px !important; }
+    .meta-item { padding: 3px 8px !important; font-size: 11px !important; }
+    .kpi-grid { gap: 8px !important; }
+    .kpi-card { padding: 10px 12px !important; }
+    .kpi-value { font-size: 24px !important; margin-bottom: 2px !important; }
+    .kpi-desc { font-size: 10.5px !important; }
+    .grid-2col { gap: 10px !important; }
+    .card { padding: 12px 14px !important; }
+    .dept-item { margin-bottom: 8px !important; }
+    .ratio-box { padding: 6px 0 !important; margin-bottom: 6px !important; }
+    .circle-chart-wrapper { width: 90px !important; height: 90px !important; }
+    .insight-card { padding: 10px 12px !important; }
+    .insight-header { font-size: 13px !important; margin-bottom: 6px !important; }
+    .insight-list { gap: 5px !important; }
+    .insight-row { padding: 6px 8px !important; font-size: 11px !important; line-height: 1.35 !important; }
+    .page-break { page-break-before: always !important; break-before: page !important; height: 0 !important; margin: 0 !important; padding: 0 !important; }
+    .table-card { padding: 14px 16px !important; }
+    .table-wrapper { overflow: visible !important; }
+    table { width: 100% !important; table-layout: fixed !important; font-size: 9.5px !important; }
+    th { padding: 6px 3px !important; font-size: 9.5px !important; white-space: normal !important; word-wrap: break-word !important; min-width: 0 !important; }
+    td { padding: 6px 3px !important; font-size: 9.5px !important; white-space: normal !important; word-wrap: break-word !important; min-width: 0 !important; }
+    .signature-grid { grid-template-columns: repeat(2, 1fr) !important; max-width: 520px !important; margin: 14px auto 0 auto !important; gap: 24px !important; padding-top: 12px !important; }
+    .sign-box { padding: 8px 6px !important; }
+    .sign-line { margin: 18px auto 6px auto !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="infographic-container">
+
+  <!-- Interactive Web Uploader Toolbar (Hidden in Print) -->
+  <div class="interactive-toolbar no-print">
+    <div class="toolbar-header">
+      <div class="toolbar-title">
+        <div class="toolbar-icon">⚡</div>
+        <div>
+          <div style="font-weight: 700; color: #FFFFFF; font-size: 15px;">ระบบอัปเดตสถิติสดแบบอินเตอร์แอคทีฟ (Real-time Web Log Uploader)</div>
+          <div style="font-size: 12px; color: var(--text-secondary);">ลากวางไฟล์ Log เครื่องพิมพ์ (.csv, .tsv, .txt) หรือคลิกเลือกไฟล์เพื่อคำนวณและแสดงผลสถิติใหม่ทันที</div>
+        </div>
+      </div>
+      <div class="toolbar-actions">
+        <label class="btn-upload" for="file-upload-input">
+          <span>📂</span> เลือกไฟล์ Log เครื่องพิมพ์
+        </label>
+        <input type="file" id="file-upload-input" accept=".csv,.tsv,.txt,.log" style="display: none;" onchange="handleFileSelect(event)">
+        <button class="btn-action" onclick="window.print()">
+          <span>🖨️</span> พิมพ์รายงาน / บันทึก PDF
+        </button>
+        <button class="btn-action" onclick="resetToBaseline()">
+          <span>🔄</span> คืนค่าตั้งต้น
+        </button>
+      </div>
+    </div>
+
+    <!-- Drag & Drop Zone -->
+    <div class="dropzone" id="drop-zone" onclick="document.getElementById('file-upload-input').click()">
+      <div class="dropzone-icon">📥</div>
+      <div class="dropzone-text">
+        <strong>ลากไฟล์ Log มาวางที่นี่</strong> หรือ <span>คลิกเพื่อเปิดหาไฟล์</span>
+      </div>
+      <div class="dropzone-sub">
+        รองรับไฟล์ CSV, TSV, TXT จากเครื่องพิมพ์ทุกรุ่น (ดึง SN, วันที่, ยอดพิมพ์สี/ขาวดำ/สแกนอัตโนมัติ)
+      </div>
+      <div id="file-info-badge" class="file-badge" style="display: none;"></div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="toast-container no-print"></div>
+
+  <!-- ================= PAGE 1 CONTENT ================= -->
+  <div class="page-1-wrapper" style="display: flex; flex-direction: column; gap: 18px;">
+    <!-- Header -->
+    <div class="header-card">
+      <div class="header-glow"></div>
+      <div class="header-top">
+        <div>
+          <div class="badge-tag">
+            <span class="badge-dot"></span>
+            AUTOMATED MONTHLY AUDIT • STATISTICAL INTELLIGENCE
+          </div>
+          <h1 class="report-title">
+            <span>🖨️</span> รายงานสถิติและวิเคราะห์การใช้งานเครื่องพิมพ์ & ถ่ายเอกสาร
+          </h1>
+          <p class="report-subtitle">
+            สรุปปริมาณการพิมพ์ (Print), ถ่ายสำเนา (Copy) และสแกนเอกสารดิจิทัล (Scan) ประจำงวดเดือน
+          </p>
+        </div>
+        <div class="sn-box">
+          <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Device Serial Number</div>
+          <div id="header-sn" style="font-size: 24px; font-weight: 800; font-family: 'Plus Jakarta Sans'; color: var(--accent-blue);">SN: 322865</div>
+        </div>
+      </div>
+
+      <div class="meta-pills">
+        <div class="meta-item">
+          <span class="label">📅 วันที่บันทึกข้อมูล:</span>
+          <span id="header-date" class="value">21/10/2026</span>
+        </div>
+        <div class="meta-item">
+          <span class="label">⏰ เวลาออกรายงาน:</span>
+          <span id="header-time" class="value">12:44:01 น.</span>
+        </div>
+        <div class="meta-item">
+          <span class="label">👥 จำนวนบัญชี:</span>
+          <span id="header-accounts-count" class="value">10 บัญชีผู้ใช้งาน</span>
+        </div>
+        <div class="meta-item">
+          <span class="label">💰 ประมาณการงบประมาณ:</span>
+          <span id="header-budget" class="value" style="color: var(--accent-amber);">฿38,224.50</span>
+        </div>
+        <div class="meta-item">
+          <span class="label">🏷️ สถานะระบบ:</span>
+          <span class="value" style="color: var(--accent-emerald);">Auto-Report Verified</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4 KPI Cards -->
+    <div class="kpi-grid">
+      <div class="kpi-card total">
+        <div class="kpi-label">
+          <span>ยอดรวมการพิมพ์ & สำเนา</span>
+          <div class="kpi-icon" style="background: rgba(56,189,248,0.15); color: #38BDF8;">📄</div>
+        </div>
+        <div id="kpi-total-output" class="kpi-value">12,699</div>
+        <div id="kpi-total-output-desc" class="kpi-desc">แผ่นทั้งหมด (Print 10,506 + Copy 2,193)</div>
+      </div>
+
+      <div class="kpi-card color">
+        <div class="kpi-label">
+          <span>พิมพ์ & สำเนาสี (Color)</span>
+          <div class="kpi-icon" style="background: rgba(244,63,94,0.15); color: #F43F5E;">🎨</div>
+        </div>
+        <div id="kpi-total-color" class="kpi-value" style="color: #FB7185;">10,625</div>
+        <div class="kpi-desc">คิดเป็นสัดส่วนสูงถึง <span id="kpi-color-pct" class="kpi-highlight">83.67%</span> (ต้นทุนหลัก)</div>
+      </div>
+
+      <div class="kpi-card bw">
+        <div class="kpi-label">
+          <span>พิมพ์ & สำเนาขาวดำ (B&W)</span>
+          <div class="kpi-icon" style="background: rgba(148,163,184,0.15); color: #94A3B8;">⬛</div>
+        </div>
+        <div id="kpi-total-bw" class="kpi-value">2,074</div>
+        <div class="kpi-desc">คิดเป็นสัดส่วนเพียง <span id="kpi-bw-pct">16.33%</span> ของยอดรวม</div>
+      </div>
+
+      <div class="kpi-card scan">
+        <div class="kpi-label">
+          <span>สแกนเอกสารดิจิทัล (Scan)</span>
+          <div class="kpi-icon" style="background: rgba(16,185,129,0.15); color: #10B981;">📥</div>
+        </div>
+        <div id="kpi-total-scan" class="kpi-value" style="color: #34D399;">384</div>
+        <div id="kpi-total-scan-desc" class="kpi-desc">ครั้ง (สี 299 ครั้ง / ขาวดำ 85 ครั้ง)</div>
+      </div>
+    </div>
+
+    <!-- Middle Grid -->
+    <div class="grid-2col">
+
+      <!-- Left: Department Breakdown -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">🏆 ปริมาณการใช้งานจำแนกตามแผนก</div>
+            <div class="card-subtitle">เรียงลำดับจากแผนกที่ใช้ทรัพยากรสูงสุด (Print + Copy)</div>
+          </div>
+        </div>
+
+        <div id="dept-list-container">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+
+      <!-- Right: Color Ratio & Cost Analysis -->
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        
+        <!-- Ratio Doughnut Card -->
+        <div class="card">
+          <div class="card-header" style="margin-bottom: 10px;">
+            <div class="card-title">📊 สัดส่วนประเภทงานพิมพ์ (Color vs B&W)</div>
+          </div>
+
+          <div class="ratio-box">
+            <div class="circle-chart-wrapper">
+              <svg viewBox="0 0 36 36" style="width: 100%; height: 100%; transform: rotate(-90deg);">
+                <path stroke="#64748B" stroke-width="4.5" fill="none"
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                <path id="svg-donut-fill" stroke="#F43F5E" stroke-width="4.5" stroke-dasharray="83.67, 100" stroke-linecap="round" fill="none"
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              </svg>
+              <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <span id="donut-center-pct" style="font-family: 'Plus Jakarta Sans'; font-size: 20px; font-weight: 800; color: #FB7185;">83.67%</span>
+                <span style="font-size: 10px; color: var(--text-muted);">สี (Color)</span>
+              </div>
+            </div>
+
+            <div class="ratio-stats">
+              <div class="ratio-item">
+                <div class="ratio-legend-dot" style="background: #F43F5E;"></div>
+                <div>
+                  <div class="ratio-legend-title">พิมพ์ & สำเนาสี</div>
+                  <div class="ratio-legend-val"><span id="donut-color-val">10,625</span> <span id="donut-color-sub" class="ratio-legend-pct">(83.67%)</span></div>
+                </div>
+              </div>
+              <div class="ratio-item">
+                <div class="ratio-legend-dot" style="background: #64748B;"></div>
+                <div>
+                  <div class="ratio-legend-title">พิมพ์ & สำเนาขาวดำ</div>
+                  <div class="ratio-legend-val"><span id="donut-bw-val">2,074</span> <span id="donut-bw-sub" class="ratio-legend-pct">(16.33%)</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11.5px;">
+            <div style="background: rgba(255,255,255,0.03); padding: 8px 10px; border-radius: 8px;">
+              <span style="color: var(--text-muted);">งานพิมพ์ (Print Ratio):</span>
+              <div id="donut-print-ratio" style="font-weight: 700; color: var(--accent-blue); font-size: 13.5px;">82.73% (10,506 แผ่น)</div>
+            </div>
+            <div style="background: rgba(255,255,255,0.03); padding: 8px 10px; border-radius: 8px;">
+              <span style="color: var(--text-muted);">งานสำเนา (Copy Ratio):</span>
+              <div id="donut-copy-ratio" style="font-weight: 700; color: #A855F7; font-size: 13.5px;">17.27% (2,193 แผ่น)</div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Actionable Insights -->
+        <div class="insight-card">
+          <div class="insight-header">
+            <span>💡</span> ข้อสังเกตและข้อเสนอแนะเชิงบริหาร (Actionable Insights)
+          </div>
+          <div class="insight-list">
+            <div class="insight-row alert">
+              <span>⚠️</span>
+              <div id="insight-alert-text">
+                <strong>ค่าใช้จ่ายหมึกสีกระจุกตัวสูง:</strong> ยอดพิมพ์สีคิดเป็น <strong>83.67%</strong> โดยฝ่าย <strong>HR</strong> และ <strong>Marketing</strong> รวมกันครองส่วนแบ่งการใช้สีถึง <strong>89.2%</strong>
+              </div>
+            </div>
+            <div class="insight-row">
+              <span>⚙️</span>
+              <div>
+                <strong>นโยบายควบคุมต้นทุน (Cost Control):</strong> ควรตั้งค่าเริ่มต้น (Default Driver) บนเครื่องพนักงานฝ่าย HR ให้เป็น <em>Black & White</em> สำหรับเอกสารร่าง/เอกสารภายใน
+              </div>
+            </div>
+            <div class="insight-row success">
+              <span>🌱</span>
+              <div id="insight-paperless-text">
+                <strong>แนวโน้ม Paperless ที่ดี:</strong> มีการใช้งานสแกนดิจิทัลรวม 384 ครั้ง โดยเฉพาะ HR ควรสานต่อการจัดเก็บบน Cloud Storage
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= PAGE 2 CONTENT (BREAK FOR PRINT) ================= -->
+  <div class="page-break"></div>
+
+  <!-- Detailed Table Card -->
+  <div class="table-card">
+    <div class="card-header" style="margin-bottom: 14px;">
+      <div>
+        <div class="card-title">📑 ตารางสรุปข้อมูลการใช้งานรายบัญชีฉบับสมบูรณ์ (Complete Audit Log)</div>
+        <div id="table-subtitle" class="card-subtitle">ข้อมูลบันทึกจากหน่วยความจำเครื่องพิมพ์ SN: 322865 ณ วันที่ 21/10/2026 เวลา 12:44:01 น.</div>
+      </div>
+      <div style="font-size: 12px; color: var(--text-muted);">
+        หน่วย: หน้า (Pages) / ครั้ง (Times)
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th style="min-width: 140px;">ชื่อผู้ใช้ / แผนก</th>
+            <th style="min-width: 60px;">รหัส (ID)</th>
+            <th class="num" style="min-width: 80px;">พิมพ์สี</th>
+            <th class="num" style="min-width: 85px;">พิมพ์ขาวดำ</th>
+            <th class="num" style="min-width: 80px;">สำเนาสี</th>
+            <th class="num" style="min-width: 85px;">สำเนาขาวดำ</th>
+            <th class="num" style="min-width: 95px;">รวมพิมพ์ & สำเนา</th>
+            <th class="num" style="min-width: 75px;">สัดส่วน (%)</th>
+            <th class="num" style="min-width: 70px;">สแกนสี</th>
+            <th class="num" style="min-width: 75px;">สแกนขาวดำ</th>
+            <th class="num" style="min-width: 75px;">รวมสแกน</th>
+          </tr>
+        </thead>
+        <tbody id="table-tbody">
+          <!-- Populated dynamically via JS -->
+        </tbody>
+        <tfoot id="table-tfoot">
+          <!-- Populated dynamically via JS -->
+        </tfoot>
+      </table>
+    </div>
+
+    <!-- Sign-off Section -->
+    <div class="signature-grid">
+      <div class="sign-box">
+        <div class="sign-title">ผู้จัดทำรายงาน (Prepared by)</div>
+        <div class="sign-line"></div>
+        <div style="font-size: 12px; font-weight: 600; color: #E2E8F0;">นายอำพล แซ่แฮ</div>
+        <div style="font-size: 11px; color: var(--text-muted);">IT Solutions Specialist</div>
+      </div>
+      <div class="sign-box">
+        <div class="sign-title">ผู้อนุมัติรายงาน (Approved by)</div>
+        <div class="sign-line"></div>
+        <div style="font-size: 12px; color: var(--text-muted);">( .................................................... )</div>
+      </div>
+    </div>
+
+    <div class="footer-note">
+      <div id="footer-sn-note">ข้อมูลดึงจากเครื่องพิมพ์ Smart Multi-function Serial Number: <strong>322865</strong> • ระบบบันทึกอัตโนมัติประจำงวด</div>
+      <div>เอกสารใช้ภายในองค์กร (Confidential Internal Audit Report)</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- State Data -->
+<script id="initial-state" type="application/json">
+{"sn": "322865", "report_date": "21/10/2026", "report_time": "12:44:01", "metrics": {"total_output": 12699, "total_print": 10506, "total_copy": 2193, "total_color": 10625, "total_bw": 2074, "total_scan": 384, "total_c_scan": 299, "total_bw_scan": 85, "total_c_print": 9232, "total_bw_print": 1274, "total_c_copy": 1393, "total_bw_copy": 800, "color_pct": 83.67, "bw_pct": 16.33, "print_ratio": 82.73, "copy_ratio": 17.27, "total_cost": 38224.5, "items": [{"name": "HR", "id": "1991", "type": "dept", "c_print": 5939, "bw_print": 685, "c_copy": 1348, "bw_copy": 504, "c_scan": 198, "bw_scan": 83, "total_pages": 8476, "total_scan": 281, "pct": 66.75, "cost": 26099.0}, {"name": "Marketing", "id": "1496", "type": "dept", "c_print": 2190, "bw_print": 364, "c_copy": 0, "bw_copy": 0, "c_scan": 0, "bw_scan": 0, "total_pages": 2554, "total_scan": 0, "pct": 20.11, "cost": 7847.0}, {"name": "Procument", "id": "1992", "type": "dept", "c_print": 774, "bw_print": 191, "c_copy": 44, "bw_copy": 262, "c_scan": 37, "bw_scan": 1, "total_pages": 1271, "total_scan": 38, "pct": 10.01, "cost": 3089.5}, {"name": "Management", "id": "1806", "type": "dept", "c_print": 247, "bw_print": 7, "c_copy": 0, "bw_copy": 0, "c_scan": 0, "bw_scan": 0, "total_pages": 254, "total_scan": 0, "pct": 2.0, "cost": 868.0}, {"name": "Information Technology", "id": "8888", "type": "dept", "c_print": 56, "bw_print": 15, "c_copy": 0, "bw_copy": 0, "c_scan": 0, "bw_scan": 0, "total_pages": 71, "total_scan": 0, "pct": 0.56, "cost": 203.5}, {"name": "Graphic", "id": "2222", "type": "dept", "c_print": 12, "bw_print": 12, "c_copy": 0, "bw_copy": 0, "c_scan": 0, "bw_scan": 0, "total_pages": 24, "total_scan": 0, "pct": 0.19, "cost": 48.0}, {"name": "User รหัส 68016", "id": "68016", "type": "user", "c_print": 0, "bw_print": 0, "c_copy": 1, "bw_copy": 23, "c_scan": 63, "bw_scan": 1, "total_pages": 24, "total_scan": 64, "pct": 0.19, "cost": 15.0}, {"name": "Ton", "id": "979", "type": "user", "c_print": 14, "bw_print": 0, "c_copy": 0, "bw_copy": 0, "c_scan": 0, "bw_scan": 0, "total_pages": 14, "total_scan": 0, "pct": 0.11, "cost": 49.0}, {"name": "KO", "id": "-", "type": "user", "c_print": 0, "bw_print": 0, "c_copy": 0, "bw_copy": 11, "c_scan": 1, "bw_scan": 0, "total_pages": 11, "total_scan": 1, "pct": 0.09, "cost": 5.5}, {"name": "Accounting", "id": "1901", "type": "dept", "c_print": 0, "bw_print": 0, "c_copy": 0, "bw_copy": 0, "c_scan": 0, "bw_scan": 0, "total_pages": 0, "total_scan": 0, "pct": 0.0, "cost": 0.0}]}, "cost_cfg": {"color_print": 3.5, "bw_print": 0.5, "color_copy": 3.5, "bw_copy": 0.5, "scan": 0.0}}
+</script>
+
+<script>
+  let currentState = JSON.parse(document.getElementById('initial-state').textContent);
+  let defaultState = JSON.parse(JSON.stringify(currentState));
+
+  // Initialize UI on DOM load
+  window.addEventListener('DOMContentLoaded', () => {
+    renderDashboard(currentState);
+    setupDropzone();
+  });
+
+  function showToast(msg, type = 'success') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `<span>${type === 'success' ? '✅' : '⚠️'}</span><span>${msg}</span>`;
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(10px)';
+      toast.style.transition = 'all 0.3s ease';
+      setTimeout(() => toast.remove(), 300);
+    }, 4000);
+  }
+
+  function setupDropzone() {
+    const dropzone = document.getElementById('drop-zone');
+    ['dragenter', 'dragover'].forEach(name => {
+      dropzone.addEventListener(name, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.add('dragover');
+      }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(name => {
+      dropzone.addEventListener(name, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.remove('dragover');
+      }, false);
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        processFile(files[0]);
+      }
+    }, false);
+  }
+
+  function handleFileSelect(e) {
+    const files = e.target.files;
+    if (files.length > 0) {
+      processFile(files[0]);
+    }
+  }
+
+  function processFile(file) {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const text = event.target.result;
+        const parsed = parseClientLog(text, file.name);
+        if (parsed && parsed.items.length > 0) {
+          currentState.metrics = parsed.metrics;
+          if (parsed.sn) currentState.sn = parsed.sn;
+          if (parsed.report_date) currentState.report_date = parsed.report_date;
+          if (parsed.report_time) currentState.report_time = parsed.report_time;
+
+          renderDashboard(currentState);
+
+          const badge = document.getElementById('file-info-badge');
+          badge.style.display = 'inline-flex';
+          badge.textContent = `📄 โหลดไฟล์: ${file.name} (${parsed.items.length} รายการ)`;
+
+          showToast(`โหลดไฟล์ ${file.name} สำเร็จ! อัปเดตสถิติเรียบร้อยแล้ว`, 'success');
+        } else {
+          showToast('ไม่พบข้อมูลตารางมิเตอร์ในไฟล์ที่อัปโหลด', 'error');
+        }
+      } catch (err) {
+        console.error(err);
+        showToast('เกิดข้อผิดพลาดในการอ่านไฟล์: ' + err.message, 'error');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function parseClientLog(text, filename) {
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+    let sn = null, report_date = null, report_time = null;
+    let headerIdx = -1;
+    let delimiter = '\t';
+
+    for (let i = 0; i < Math.min(15, lines.length); i++) {
+      const lower = lines[i].toLowerCase();
+      if (lower.includes('serial number') && lines[i].includes('\t')) {
+        sn = lines[i].split('\t')[1]?.trim();
+      } else if (lower.includes('report date') && lines[i].includes('\t')) {
+        report_date = lines[i].split('\t')[1]?.trim();
+      } else if (lower.includes('report time') && lines[i].includes('\t')) {
+        report_time = lines[i].split('\t')[1]?.trim();
+      }
+
+      if (lower.includes('name') && (lower.includes('print') || lower.includes('color'))) {
+        headerIdx = i;
+        if (lines[i].includes(',') && !lines[i].includes('\t')) delimiter = ',';
+        else if (lines[i].includes(';')) delimiter = ';';
+        break;
+      }
+    }
+
+    if (headerIdx === -1) return null;
+
+    const headers = lines[headerIdx].split(delimiter).map(h => h.trim());
+    const rawItems = [];
+
+    for (let i = headerIdx + 1; i < lines.length; i++) {
+      const parts = lines[i].split(delimiter).map(p => p.trim());
+      if (parts.length >= headers.length - 2) {
+        while (parts.length < headers.length) parts.push('');
+        const row = {};
+        headers.forEach((h, idx) => { row[h] = parts[idx]; });
+
+        let name = (row['Name'] || parts[0] || '').trim();
+        const uid = (row['ID'] || '').trim();
+        if (!name && uid) name = `User รหัส ${uid}`;
+        if (!name || ['system user', 'total', 'grand total', '-'].includes(name.toLowerCase())) continue;
+
+        const toNum = (val) => parseInt(String(val || 0).replace(/,/g, '')) || 0;
+
+        rawItems.push({
+          name: name,
+          id: uid || '-',
+          type: /HR|Marketing|Procument|Management|Technology|Graphic|Accounting/i.test(name) ? 'dept' : 'user',
+          c_print: toNum(row['Color Print Usage']),
+          bw_print: toNum(row['Black & White Print Usage']),
+          c_copy: toNum(row['Color Copy Usage']),
+          bw_copy: toNum(row['Black & White Copy Usage']),
+          c_scan: toNum(row['Color Scan Usage']),
+          bw_scan: toNum(row['Black & White Scan Usage'])
+        });
+      }
+    }
+
+    // Calculate metrics
+    const c_p = rawItems.reduce((acc, x) => acc + x.c_print, 0);
+    const bw_p = rawItems.reduce((acc, x) => acc + x.bw_print, 0);
+    const c_c = rawItems.reduce((acc, x) => acc + x.c_copy, 0);
+    const bw_c = rawItems.reduce((acc, x) => acc + x.bw_copy, 0);
+    const c_s = rawItems.reduce((acc, x) => acc + x.c_scan, 0);
+    const bw_s = rawItems.reduce((acc, x) => acc + x.bw_scan, 0);
+
+    const total_print = c_p + bw_p;
+    const total_copy = c_c + bw_c;
+    const total_output = total_print + total_copy;
+    const total_color = c_p + c_c;
+    const total_bw = bw_p + bw_c;
+    const total_scan = c_s + bw_s;
+
+    const color_pct = total_output > 0 ? (total_color / total_output * 100) : 0;
+    const bw_pct = total_output > 0 ? (total_bw / total_output * 100) : 0;
+    const print_ratio = total_output > 0 ? (total_print / total_output * 100) : 0;
+    const copy_ratio = total_output > 0 ? (total_copy / total_output * 100) : 0;
+
+    const costCfg = currentState.cost_cfg || { color_print: 3.5, bw_print: 0.5, color_copy: 3.5, bw_copy: 0.5 };
+    const total_cost = (c_p * costCfg.color_print) + (bw_p * costCfg.bw_print) + (c_c * costCfg.color_copy) + (bw_c * costCfg.bw_copy);
+
+    const items = rawItems.map(item => {
+      const pages = item.c_print + item.bw_print + item.c_copy + item.bw_copy;
+      const scans = item.c_scan + item.bw_scan;
+      const pct = total_output > 0 ? (pages / total_output * 100) : 0;
+      const cost = (item.c_print * costCfg.color_print) + (item.bw_print * costCfg.bw_print) + (item.c_copy * costCfg.color_copy) + (item.bw_copy * costCfg.bw_copy);
+      return {
+        ...item,
+        total_pages: pages,
+        total_scan: scans,
+        pct: parseFloat(pct.toFixed(2)),
+        cost: parseFloat(cost.toFixed(2))
+      };
+    });
+
+    items.sort((a, b) => b.total_pages - a.total_pages);
+
+    return {
+      sn,
+      report_date,
+      report_time,
+      items,
+      metrics: {
+        total_output,
+        total_print,
+        total_copy,
+        total_color,
+        total_bw,
+        total_scan,
+        total_c_scan: c_s,
+        total_bw_scan: bw_s,
+        total_c_print: c_p,
+        total_bw_print: bw_p,
+        total_c_copy: c_c,
+        total_bw_copy: bw_c,
+        color_pct: parseFloat(color_pct.toFixed(2)),
+        bw_pct: parseFloat(bw_pct.toFixed(2)),
+        print_ratio: parseFloat(print_ratio.toFixed(2)),
+        copy_ratio: parseFloat(copy_ratio.toFixed(2)),
+        total_cost: parseFloat(total_cost.toFixed(2)),
+        items
+      }
+    };
+  }
+
+  function renderDashboard(state) {
+    const m = state.metrics;
+    document.getElementById('header-sn').textContent = `SN: ${state.sn}`;
+    document.getElementById('header-date').textContent = state.report_date;
+    document.getElementById('header-time').textContent = state.report_time.includes('น.') ? state.report_time : `${state.report_time} น.`;
+    document.getElementById('header-accounts-count').textContent = `${m.items.length} บัญชีผู้ใช้งาน`;
+    document.getElementById('header-budget').textContent = `฿${m.total_cost.toLocaleString('th-TH', {minimumFractionDigits: 2})}`;
+
+    document.getElementById('kpi-total-output').textContent = m.total_output.toLocaleString();
+    document.getElementById('kpi-total-output-desc').textContent = `แผ่นทั้งหมด (Print ${m.total_print.toLocaleString()} + Copy ${m.total_copy.toLocaleString()})`;
+    document.getElementById('kpi-total-color').textContent = m.total_color.toLocaleString();
+    document.getElementById('kpi-color-pct').textContent = `${m.color_pct}%`;
+    document.getElementById('kpi-total-bw').textContent = m.total_bw.toLocaleString();
+    document.getElementById('kpi-bw-pct').textContent = `${m.bw_pct}%`;
+    document.getElementById('kpi-total-scan').textContent = m.total_scan.toLocaleString();
+    document.getElementById('kpi-total-scan-desc').textContent = `ครั้ง (สี ${m.total_c_scan.toLocaleString()} ครั้ง / ขาวดำ ${m.total_bw_scan.toLocaleString()} ครั้ง)`;
+
+    // SVG Donut
+    const strokeDash = `${m.color_pct}, 100`;
+    document.getElementById('svg-donut-fill').setAttribute('stroke-dasharray', strokeDash);
+    document.getElementById('donut-center-pct').textContent = `${m.color_pct}%`;
+    document.getElementById('donut-color-val').textContent = m.total_color.toLocaleString();
+    document.getElementById('donut-color-sub').textContent = `(${m.color_pct}%)`;
+    document.getElementById('donut-bw-val').textContent = m.total_bw.toLocaleString();
+    document.getElementById('donut-bw-sub').textContent = `(${m.bw_pct}%)`;
+    document.getElementById('donut-print-ratio').textContent = `${m.print_ratio}% (${m.total_print.toLocaleString()} แผ่น)`;
+    document.getElementById('donut-copy-ratio').textContent = `${m.copy_ratio}% (${m.total_copy.toLocaleString()} แผ่น)`;
+
+    // Department Bars
+    const deptContainer = document.getElementById('dept-list-container');
+    deptContainer.innerHTML = '';
+    const top4 = m.items.slice(0, 4);
+    const others = m.items.slice(4);
+
+    const colors = [
+      { rank: '#1', fill: 'linear-gradient(90deg, #F43F5E, #FB7185)', color: '#F59E0B', badge: 'rgba(244,63,94,0.2)', badgeCol: '#FB7185' },
+      { rank: '#2', fill: 'linear-gradient(90deg, #38BDF8, #6366F1)', color: '#94A3B8', badge: 'rgba(56,189,248,0.2)', badgeCol: '#38BDF8' },
+      { rank: '#3', fill: 'linear-gradient(90deg, #10B981, #059669)', color: '#D97706', badge: 'rgba(16,185,129,0.2)', badgeCol: '#34D399' },
+      { rank: '#4', fill: '#A855F7', color: '#A855F7', badge: 'rgba(168,85,247,0.2)', badgeCol: '#C084FC' }
+    ];
+
+    top4.forEach((item, idx) => {
+      const style = colors[idx] || colors[3];
+      const deptDiv = document.createElement('div');
+      deptDiv.className = 'dept-item';
+      deptDiv.innerHTML = `
+        <div class="dept-info">
+          <span class="dept-name">
+            <span style="color: ${style.color}; font-weight: bold;">${style.rank}</span>
+            ${item.name}
+            <span class="dept-badge" style="background: ${style.badge}; color: ${style.badgeCol};">ID: ${item.id}</span>
+          </span>
+          <span class="dept-stats">${item.total_pages.toLocaleString()} แผ่น <span class="dept-substats">(${item.pct}%)</span></span>
+        </div>
+        <div class="progress-bg">
+          <div class="progress-fill" style="width: ${Math.min(100, item.pct)}%; background: ${style.fill};"></div>
+        </div>
+        <div style="font-size: 11px; color: var(--text-muted); margin-top: 3px; display: flex; justify-content: space-between;">
+          <span>พิมพ์สี: ${item.c_print.toLocaleString()} | สำเนาสี: ${item.c_copy.toLocaleString()} | ขาวดำ: ${(item.bw_print + item.bw_copy).toLocaleString()}</span>
+          ${item.total_scan > 0 ? `<span style="color: #34D399;">สแกน: ${item.total_scan.toLocaleString()} ครั้ง</span>` : ''}
+        </div>
+      `;
+      deptContainer.appendChild(deptDiv);
+    });
+
+    // Others summary bar
+    if (others.length > 0) {
+      const otherPages = others.reduce((acc, x) => acc + x.total_pages, 0);
+      const otherPct = parseFloat(((otherPages / m.total_output) * 100).toFixed(2));
+      const otherNames = others.map(x => `${x.name.split(' ')[0]}: ${x.total_pages.toLocaleString()}`).join(' | ');
+
+      const otherDiv = document.createElement('div');
+      otherDiv.className = 'dept-item';
+      otherDiv.style.marginBottom = '0';
+      otherDiv.innerHTML = `
+        <div class="dept-info">
+          <span class="dept-name">#5 กลุ่มอื่นๆ (${others.length} บัญชี)</span>
+          <span class="dept-stats">${otherPages.toLocaleString()} แผ่น <span class="dept-substats">(${otherPct}%)</span></span>
+        </div>
+        <div class="progress-bg">
+          <div class="progress-fill" style="width: ${Math.min(100, otherPct)}%; background: #64748B;"></div>
+        </div>
+        <div style="font-size: 11px; color: var(--text-muted); margin-top: 3px;">
+          <span>${otherNames}</span>
+        </div>
+      `;
+      deptContainer.appendChild(otherDiv);
+    }
+
+    // Insights text
+    const top1 = m.items[0];
+    const top2 = m.items[1];
+    const top2Color = (top1 ? (top1.c_print + top1.c_copy) : 0) + (top2 ? (top2.c_print + top2.c_copy) : 0);
+    const top2ColorPct = m.total_color > 0 ? ((top2Color / m.total_color) * 100).toFixed(1) : 0;
+
+    document.getElementById('insight-alert-text').innerHTML = `
+      <strong>ค่าใช้จ่ายหมึกสีกระจุกตัวสูง:</strong> ยอดพิมพ์สีคิดเป็น <strong>${m.color_pct}%</strong> โดยฝ่าย <strong>${top1 ? top1.name : ''}</strong> และ <strong>${top2 ? top2.name : ''}</strong> รวมกันครองส่วนแบ่งการใช้สีถึง <strong>${top2ColorPct}%</strong>
+    `;
+
+    document.getElementById('insight-paperless-text').innerHTML = `
+      <strong>แนวโน้ม Paperless ที่ดี:</strong> มีการใช้งานสแกนดิจิทัลรวม ${m.total_scan.toLocaleString()} ครั้ง โดยเฉพาะ ${top1 ? top1.name : ''} (${top1 ? top1.total_scan.toLocaleString() : 0} ครั้ง) ควรสานต่อการจัดเก็บบน Cloud Storage
+    `;
+
+    // Audit Table Rows
+    const tbody = document.getElementById('table-tbody');
+    tbody.innerHTML = '';
+    m.items.forEach(item => {
+      let rowCls = '';
+      if (item.name.includes('HR')) rowCls = 'class="highlight-hr"';
+      else if (item.name.includes('Marketing')) rowCls = 'class="highlight-mkt"';
+
+      const tr = document.createElement('tr');
+      if (rowCls) tr.className = rowCls.replace('class="', '').replace('"', '');
+      tr.innerHTML = `
+        <td><strong>${item.name}</strong></td>
+        <td>${item.id}</td>
+        <td class="num bold color-badge">${item.c_print.toLocaleString()}</td>
+        <td class="num bw-badge">${item.bw_print.toLocaleString()}</td>
+        <td class="num bold color-badge">${item.c_copy.toLocaleString()}</td>
+        <td class="num bw-badge">${item.bw_copy.toLocaleString()}</td>
+        <td class="num bold" style="color: #FFFFFF; font-size: 13.5px;">${item.total_pages.toLocaleString()}</td>
+        <td class="num bold">${item.pct.toFixed(2)}%</td>
+        <td class="num scan-badge">${item.c_scan.toLocaleString()}</td>
+        <td class="num scan-badge">${item.bw_scan.toLocaleString()}</td>
+        <td class="num bold scan-badge">${item.total_scan.toLocaleString()}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    // Table Footer
+    const tfoot = document.getElementById('table-tfoot');
+    tfoot.innerHTML = `
+      <tr style="background: #111C33; font-weight: 700; border-top: 2px solid var(--accent-blue);">
+        <td style="color: #FFFFFF; font-size: 13.5px;">รวมทั้งสิ้น (Grand Total)</td>
+        <td>-</td>
+        <td class="num bold color-badge" style="font-size: 13.5px;">${m.total_c_print.toLocaleString()}</td>
+        <td class="num bold bw-badge" style="font-size: 13.5px;">${m.total_bw_print.toLocaleString()}</td>
+        <td class="num bold color-badge" style="font-size: 13.5px;">${m.total_c_copy.toLocaleString()}</td>
+        <td class="num bold bw-badge" style="font-size: 13.5px;">${m.total_bw_copy.toLocaleString()}</td>
+        <td class="num bold" style="color: #38BDF8; font-size: 15px;">${m.total_output.toLocaleString()}</td>
+        <td class="num bold" style="color: #38BDF8;">100.0%</td>
+        <td class="num bold scan-badge">${m.total_c_scan.toLocaleString()}</td>
+        <td class="num bold scan-badge">${m.total_bw_scan.toLocaleString()}</td>
+        <td class="num bold scan-badge" style="font-size: 14px;">${m.total_scan.toLocaleString()}</td>
+      </tr>
+    `;
+
+    document.getElementById('table-subtitle').textContent = `ข้อมูลบันทึกจากหน่วยความจำเครื่องพิมพ์ SN: ${state.sn} ณ วันที่ ${state.report_date} เวลา ${state.report_time}`;
+    document.getElementById('footer-sn-note').innerHTML = `ข้อมูลดึงจากเครื่องพิมพ์ Smart Multi-function Serial Number: <strong>${state.sn}</strong> • ระบบบันทึกอัตโนมัติประจำงวด`;
+  }
+
+  function resetToBaseline() {
+    currentState = JSON.parse(JSON.stringify(defaultState));
+    renderDashboard(currentState);
+    const badge = document.getElementById('file-info-badge');
+    badge.style.display = 'none';
+    showToast('คืนค่าข้อมูลตั้งต้นเรียบร้อยแล้ว', 'success');
+  }
+</script>
+</body>
+</html>

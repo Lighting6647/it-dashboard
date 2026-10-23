@@ -6,6 +6,10 @@ import UserAccessManager from './pages/UserAccessManager';
 import fernAesthetiqueLogo from './assets/fern-aesthetique-logo.png';
 import { authFetch, canAdministerSystem, canEditOperationalData, clearAuth, getStoredAuth, ROLE_LABELS } from './auth';
 import { countPendingTicketClosures } from './utils/ticketMetrics';
+import { reconcileDeviceMonitorCoverage } from './utils/deviceMonitorMetrics';
+import { resolveEmbeddedReportUrl } from './utils/embeddedReport';
+import { buildBulkAssetPatch } from './utils/assetBulkEdit';
+import { initialAssetsData, initialDashboardData, initialAssetRequests } from './data/seedData';
 import Chart from 'chart.js/auto';
 import gsap from 'gsap';
 import * as XLSX from 'xlsx';
@@ -35,1679 +39,11 @@ import {
 
 const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:5000' : '';
 const IOS_DEVICE_MONITOR_BASE = 'https://ios-device-monitor-46w9.onrender.com';
+const PRINTER_USAGE_REPORT_URL = resolveEmbeddedReportUrl(import.meta.env.BASE_URL, 'reports/printer-usage.html');
 const THAI_MONTH_LABELS = [
   'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
   'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
 ];
-
-// Initial blank data - use Excel import to load real data
-const initialAssetsData = [
-  {
-    "sn": 23,
-    "date": "20/05/2569",
-    "user": "อำพล เเซ่เเฮ",
-    "position": "IT",
-    "itemType": "Computer (Pc)",
-    "deviceSerial": "AS-002",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 83,
-    "date": "06/12/2568",
-    "user": "อำพล    แซ่แฮ",
-    "position": "IT",
-    "itemType": "Ipad",
-    "deviceSerial": "iPad-010",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 217,
-    "date": "",
-    "user": "อำพล  แซ่แฮ",
-    "position": "IT",
-    "itemType": "Mornitor",
-    "deviceSerial": "LG-005",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 213,
-    "date": "18/05/2569",
-    "user": "ธันวา เเซ่เเฮ",
-    "position": "IT",
-    "itemType": "Notebook Lenovo",
-    "deviceSerial": "LENOVO-010 ",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 138,
-    "date": "20/11/2568",
-    "user": "อำพล   แซ่แฮ",
-    "position": "IT",
-    "itemType": "Notebook Lenovo",
-    "deviceSerial": "LENOVO-033",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 239,
-    "date": "",
-    "user": "อำพล  แซ่แฮ",
-    "position": "IT",
-    "itemType": "External HDD",
-    "deviceSerial": "ETN-003 WD My PassPort 1TB",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 246,
-    "date": "",
-    "user": "อำพล  แซ่แฮ",
-    "position": "IT",
-    "itemType": "Cable HDMI",
-    "deviceSerial": "ไม่มีหมายเลข อุปกรณ์",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 248,
-    "date": "10/07/2569",
-    "user": "ธันวา เเซ่เเฮ",
-    "position": "IT",
-    "itemType": "Mouse",
-    "deviceSerial": "MOS-002",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 252,
-    "date": "",
-    "user": "อำพล  แซ่แฮ",
-    "position": "IT",
-    "itemType": "Keyboard",
-    "deviceSerial": "KBD-003",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 329,
-    "date": "10/07/2569",
-    "user": "ธันวา เเซ่เเฮ",
-    "position": "IT",
-    "itemType": "Keyboard",
-    "deviceSerial": "KBD-007",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 272,
-    "date": "",
-    "user": "อำพล   แซ่แฮ",
-    "position": "IT",
-    "itemType": "Screwdriver",
-    "deviceSerial": "ไม่มีหมายเลข อุปกรณ์",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 33,
-    "date": "09/07/2569",
-    "user": "วิลาสินี ทับทิม (นี)",
-    "position": "Accounting",
-    "itemType": "Notebook Asus",
-    "deviceSerial": "ASUS-006",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ วัน จ"
-  },
-  {
-    "sn": 313,
-    "date": "",
-    "user": "สุภาพ แสนจันทร์ ( ส้ม )",
-    "position": "Accounting",
-    "itemType": "Printer",
-    "deviceSerial": "PT-002",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ วัน จ"
-  },
-  {
-    "sn": 135,
-    "date": "09/07/2569",
-    "user": "วิลาสินี ทับทิม (นี)",
-    "position": "Accounting",
-    "itemType": "Mornitor",
-    "deviceSerial": "LG-004",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ วัน จ"
-  },
-  {
-    "sn": 27,
-    "date": "",
-    "user": "สุภาพ แสนจันทร์ ( ส้ม )",
-    "position": "Accounting",
-    "itemType": "Notebook Lenovo",
-    "deviceSerial": "LENOVO-005",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ วัน จ"
-  },
-  {
-    "sn": 34,
-    "date": "",
-    "user": "ณัฐชา คำสอนพันธ์ (กิ๊ก)",
-    "position": "Procurement & Warehouse Officer",
-    "itemType": "Notebook Asus",
-    "deviceSerial": "ASUS-007",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 93,
-    "date": "08/05/3111",
-    "user": "ศิริพร เพชรมูล ( บี )",
-    "position": "Procurement & Warehouse Officer",
-    "itemType": "Ipad",
-    "deviceSerial": "iPad-020",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 71,
-    "date": "08/05/3111",
-    "user": "ศิริพร เพชรมูล ( บี )",
-    "position": "Procurement & Warehouse Officer",
-    "itemType": "IPhone",
-    "deviceSerial": "iPhone-011",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 111,
-    "date": "08/05/3111",
-    "user": "ศิริพร เพชรมูล ( บี )",
-    "position": "Procurement & Warehouse Officer",
-    "itemType": "Apple Pancill",
-    "deviceSerial": "Pencil-018",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 26,
-    "date": "",
-    "user": "ศิริพร เพชรมูล ( บี )",
-    "position": "Procurement & Warehouse Officer",
-    "itemType": "Notebook Lenovo",
-    "deviceSerial": "LENOVO-004",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 58,
-    "date": "",
-    "user": "ธนัชชา บุญมีมาก (ป๊อป)",
-    "position": "Content Creator",
-    "itemType": "Macbook",
-    "deviceSerial": "MacBookAir-028",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 325,
-    "date": "10/07/2569",
-    "user": "วริสรา สงวนวงษ์ (ซินดี้)",
-    "position": "Content Creator",
-    "itemType": "Macbook",
-    "deviceSerial": "MacBook air-029  ",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 339,
-    "date": "01/07/2569",
-    "user": "ณัฐฏชญาดา ตรีวิวัฒน์กุล (Mac)",
-    "position": "Content Creator",
-    "itemType": "Notebook Lenovo",
-    "deviceSerial": "LENOVO-043",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 231,
-    "date": "23/05/2569",
-    "user": "ธนัชชา บุญมีมาก (ป๊อป)",
-    "position": "Content Creator",
-    "itemType": "Hub USB-TypeC",
-    "deviceSerial": "Fernclinic-MKT-005",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 214,
-    "date": "",
-    "user": "วริสรา สงวนวงษ์ (ซินดี้)",
-    "position": "Tiktok Content Creator",
-    "itemType": "Notebook Asus",
-    "deviceSerial": "Asus-031",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 265,
-    "date": "11/12/2568",
-    "user": "นภัสสร นาสวน ( โบว์ )",
-    "position": "Tiktok Content Creator",
-    "itemType": "Notebook Asus",
-    "deviceSerial": "ASUS-037",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 86,
-    "date": "",
-    "user": "นภัสสร นาสวน ( โบว์ )",
-    "position": "Tiktok Content Creator",
-    "itemType": "Ipad",
-    "deviceSerial": "iPad-013",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 87,
-    "date": "18/07/2569",
-    "user": "บุษกร บัวสวรรค์",
-    "position": "Tiktok Content Creator",
-    "itemType": "Ipad",
-    "deviceSerial": "iPad-014",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 282,
-    "date": "15/07/2569",
-    "user": "ปณิศอร บุญจูบุตร",
-    "position": "Tiktok Content Creator",
-    "itemType": "Ipad",
-    "deviceSerial": "iPad-021",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 53,
-    "date": "",
-    "user": "ทีม",
-    "position": "Tiktok Content Creator",
-    "itemType": "IPhone",
-    "deviceSerial": "iPhone-013",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 62,
-    "date": "",
-    "user": "ทีม",
-    "position": "Tiktok Content Creator",
-    "itemType": "IPhone",
-    "deviceSerial": "iPhone-002",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 66,
-    "date": "",
-    "user": "ทีม",
-    "position": "Tiktok Content Creator",
-    "itemType": "IPhone",
-    "deviceSerial": "iPhone-006",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 72,
-    "date": "",
-    "user": "ทีม",
-    "position": "Tiktok Content Creator",
-    "itemType": "IPhone",
-    "deviceSerial": "iPhone-012",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 357,
-    "date": "",
-    "user": "ทีม",
-    "position": "Tiktok Content Creator",
-    "itemType": "IPhone",
-    "deviceSerial": "iPhone-014",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 365,
-    "date": "30/06/2569",
-    "user": "ทีม",
-    "position": "Tiktok Content Creator",
-    "itemType": "IPhone",
-    "deviceSerial": "iphone-015",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 20,
-    "date": "",
-    "user": "นภัสสร นาสวน ( โบว์ )",
-    "position": "Tiktok Content Creator",
-    "itemType": "IMac",
-    "deviceSerial": "MC-002",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 326,
-    "date": "",
-    "user": "ชัยธัช ชัยวัฒน์ (มาร์ค)",
-    "position": "Graphic Designer",
-    "itemType": "Computer (Pc)",
-    "deviceSerial": "AS-003",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 305,
-    "date": "08/06/2569",
-    "user": "รามจิตติ ชินนะเกิดโชค(เบนซ์)",
-    "position": "Graphic Designer",
-    "itemType": "Computer (Pc), Mornitor",
-    "deviceSerial": "PC LG-004 ",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 294,
-    "date": "08/06/2569",
-    "user": "อาทิตยา มุมทอง (ขมิ้น)",
-    "position": "Graphic Designer",
-    "itemType": "IMac",
-    "deviceSerial": "MC-008",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 319,
-    "date": "19/05/2569",
-    "user": "พิชชาพร คอทอง(พีเจ้น)",
-    "position": "Graphic Designer",
-    "itemType": "IMac",
-    "deviceSerial": "MC-009",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 218,
-    "date": "08/06/2569",
-    "user": "อาทิตยา มุมทอง (ขมิ้น)",
-    "position": "Graphic Designer",
-    "itemType": "Mornitor",
-    "deviceSerial": "LG-003 (จอ)",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 303,
-    "date": "08/06/2569",
-    "user": "รามจิตติ ชินนะเกิดโชค(เบนซ์)",
-    "position": "Graphic Designer",
-    "itemType": "Mornitor",
-    "deviceSerial": "AS-001",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 304,
-    "date": "",
-    "user": "พิชชาพร คอทอง(พีเจ้น)",
-    "position": "Graphic Designer",
-    "itemType": "Mornitor",
-    "deviceSerial": "AS-003",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 318,
-    "date": "",
-    "user": "ชัยธัช ชัยวัฒน์ (มาร์ค)",
-    "position": "Graphic Designer",
-    "itemType": "Mornitor",
-    "deviceSerial": "LG-002",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 234,
-    "date": "08/06/2569",
-    "user": "อาทิตยา มุมทอง (ขมิ้น)",
-    "position": "Graphic Designer",
-    "itemType": "Hub USB-TypeC",
-    "deviceSerial": "Fernclinic-Meeting-001",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 301,
-    "date": "",
-    "user": "พิชชาพร คอทอง(พีเจ้น)",
-    "position": "Graphic Designer",
-    "itemType": "Hub USB-TypeC",
-    "deviceSerial": "Meeting-002",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 238,
-    "date": "08/06/2569",
-    "user": "อาทิตยา มุมทอง (ขมิ้น)",
-    "position": "Graphic Designer",
-    "itemType": "External HDD",
-    "deviceSerial": "ETN-002  WD My PassPort 4TB",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 247,
-    "date": "",
-    "user": "พิชชาพร คอทอง(พีเจ้น)",
-    "position": "Graphic Designer",
-    "itemType": "Mouse",
-    "deviceSerial": "MOS-001",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 249,
-    "date": "08/06/2569",
-    "user": "อาทิตยา มุมทอง (ขมิ้น)",
-    "position": "Graphic Designer",
-    "itemType": "Mouse",
-    "deviceSerial": "MOS-003",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 250,
-    "date": "08/06/2569",
-    "user": "อาทิตยา มุมทอง (ขมิ้น)",
-    "position": "Graphic Designer",
-    "itemType": "Keyboard",
-    "deviceSerial": "KBD-004",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 260,
-    "date": "01/06/2569",
-    "user": "ชัยธัช ชัยวัฒน์ (มาร์ค)",
-    "position": "Graphic Designer",
-    "itemType": "Keyboard",
-    "deviceSerial": "KBD-006",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 302,
-    "date": "08/06/2569",
-    "user": "รามจิตติ ชินนะเกิดโชค(เบนซ์)",
-    "position": "Graphic Designer",
-    "itemType": "Hub Lan",
-    "deviceSerial": "ไม่มีหมายเลข",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 330,
-    "date": "20/05/2569",
-    "user": "พิชชาพร คอทอง(พีเจ้น)",
-    "position": "Graphic Designer",
-    "itemType": "Hub Lan",
-    "deviceSerial": "USB-C TO LAN ",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 229,
-    "date": "",
-    "user": "ทีม admin",
-    "position": "Admin",
-    "itemType": "Computer (Pc)",
-    "deviceSerial": "MIS-002 มินิpc",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 36,
-    "date": "",
-    "user": "กานต์ฑิตา ธีระพิบูลย์ ( อิง )",
-    "position": "Admin",
-    "itemType": "Notebook Asus",
-    "deviceSerial": "ASUS-011",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 37,
-    "date": "",
-    "user": "ศุภฤกษ์ ภายใธสง (คริม)",
-    "position": "Admin",
-    "itemType": "Notebook Asus",
-    "deviceSerial": "ASUS-017",
-    "status": "ใช้งาน",
-    "notes": "หา lark ไม่เจอ ครับ"
-  },
-  {
-    "sn": 76,
-    "date": "30/06/2569",
-    "user": "ศุภฤกษ์ ภายไธสง (ดรีม)",
-    "position": "Admin",
-    "itemType": "Ipad",
-    "deviceSerial": "iPad-003",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 358,
-    "date": "",
-    "user": "ทัศววรณ วัลย์ดาว (ใบตอง)",
-    "position": "Admin",
-    "itemType": "Ipad",
-    "deviceSerial": "iPad-019",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 359,
-    "date": "",
-    "user": "ทัศววรณ วัลย์ดาว (ใบตอง)",
-    "position": "Admin",
-    "itemType": "IPhone",
-    "deviceSerial": "iPhone-004",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 360,
-    "date": "",
-    "user": "กานต์ฑิตา ธีระพิบูลย์ ( อิง )",
-    "position": "Admin",
-    "itemType": "IPhone",
-    "deviceSerial": "iPhone-009",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 28,
-    "date": "",
-    "user": "ปัญจมา สมบัติกำไร (เอิน)",
-    "position": "Admin",
-    "itemType": "Notebook Lenovo",
-    "deviceSerial": "LENOVO-014",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 47,
-    "date": "",
-    "user": "ทัศววรณ วัลย์ดาว (ใบตอง)",
-    "position": "Admin",
-    "itemType": "Notebook Acer, Iphone",
-    "deviceSerial": "ACER-015",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 56,
-    "date": "14/07/2569",
-    "user": "เนตรปรีญา ทัดศรี",
-    "position": "Receptionist",
-    "itemType": "Macbook",
-    "deviceSerial": "MacBookAir-009",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 91,
-    "date": "07/09/3111",
-    "user": "Receptionist",
-    "position": "Receptionist",
-    "itemType": "Ipad",
-    "deviceSerial": "iPad-018",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 67,
-    "date": "",
-    "user": "Receptionist",
-    "position": "Receptionist",
-    "itemType": "IPhone",
-    "deviceSerial": "iPhone-007",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 51,
-    "date": "",
-    "user": "Receptionist",
-    "position": "Receptionist",
-    "itemType": "IMac",
-    "deviceSerial": "MC-003",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 52,
-    "date": "",
-    "user": "Receptionist",
-    "position": "Receptionist",
-    "itemType": "IMac",
-    "deviceSerial": "MC-004",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 334,
-    "date": "16/07/2569",
-    "user": "เนตรปรีญา ทัดศรี",
-    "position": "Receptionist",
-    "itemType": "Mouse",
-    "deviceSerial": "MC-008",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 35,
-    "date": "",
-    "user": "วิกานดา ทุมมนตรี ( แป๋วแหว๋ว )",
-    "position": "Payroll Officer",
-    "itemType": "Notebook Asus",
-    "deviceSerial": "ASUS-008",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 44,
-    "date": "10/07/2569",
-    "user": "อนิรุตต์ พานแสนซา",
-    "position": "Live Streamer",
-    "itemType": "Ipad",
-    "deviceSerial": "iPad-016",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 85,
-    "date": "26/06/2569",
-    "user": "ธนันวลัญชน์ ศรีออน (อาโน)",
-    "position": "Live Streamer",
-    "itemType": "Ipad",
-    "deviceSerial": "iPad-012",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 314,
-    "date": "",
-    "user": "ชนิสรา ตรีสัตยกุล (อุบอิบ)",
-    "position": "Live Streamer",
-    "itemType": "Ipad",
-    "deviceSerial": "\niPad 017\n",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 61,
-    "date": "",
-    "user": "ชนิสรา ตรีสัตยกุล  (อุบอิบ)",
-    "position": "Live Streamer",
-    "itemType": "IPhone",
-    "deviceSerial": "iPhone-001",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 63,
-    "date": "26/06/2569",
-    "user": "ธนันวลัญชน์ ศรีออน (อาโน)",
-    "position": "Live Streamer",
-    "itemType": "IPhone",
-    "deviceSerial": "iPhone-003",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 285,
-    "date": "",
-    "user": "ชนิสรา ตรีสัตยกุล  (อุบอิบ)",
-    "position": "Live Streamer",
-    "itemType": "Adapter Apple",
-    "deviceSerial": "ADT-007",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 287,
-    "date": "",
-    "user": "ชนิสรา ตรีสัตยกุล  (อุบอิบ)",
-    "position": "Live Streamer",
-    "itemType": "Cable Apple",
-    "deviceSerial": "-",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 40,
-    "date": "",
-    "user": "อสมาภรณ์ ย่านเดิม ( เนม )",
-    "position": "Personal Assistant to CEO",
-    "itemType": "Notebook Asus",
-    "deviceSerial": "ASUS-020",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 43,
-    "date": "08/01/3111",
-    "user": "สรุดตา ป๋อพริ้ง (ปาน)",
-    "position": "Personal Assistant to CEO",
-    "itemType": "Notebook Asus",
-    "deviceSerial": "ASUS-023",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 57,
-    "date": "16/07/2569",
-    "user": "เนลินญาน์  ศิระไมตรีฉัตร (เนริน)",
-    "position": "Personal Assistant to CEO",
-    "itemType": "Macbook",
-    "deviceSerial": "MacBookAir-027",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 7,
-    "date": "",
-    "user": "อสมาภรณ์ ย่านเดิม ( เนม )",
-    "position": "Personal Assistant to CEO",
-    "itemType": "IPhone",
-    "deviceSerial": "iPhone-010",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 1,
-    "date": "",
-    "user": "สุดธิดา เผ่าหอม (ต่าย) (KT)",
-    "position": "HR",
-    "itemType": "Notebook Asus",
-    "deviceSerial": "ASUS-002",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 41,
-    "date": "",
-    "user": "กฤษณา ลำเพ็ง ( พลอย )",
-    "position": "HR",
-    "itemType": "Notebook Asus",
-    "deviceSerial": "ASUS-038",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 42,
-    "date": "",
-    "user": "นารีรัตน์ ขันทอง ( ออย )",
-    "position": "HR",
-    "itemType": "Notebook Asus",
-    "deviceSerial": "ASUS-022",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 74,
-    "date": "",
-    "user": "นารีรัตน์ ขันทอง ( ออย )",
-    "position": "HR",
-    "itemType": "Ipad",
-    "deviceSerial": "iPad-001",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 88,
-    "date": "10/07/2569",
-    "user": "ศรัญญา ธรรมเนียมภักดี ( แนน )",
-    "position": "HR",
-    "itemType": "Ipad",
-    "deviceSerial": "iPad-015",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 320,
-    "date": "17/06/2569",
-    "user": "นารีรัตน์ ขันทอง ( ออย )",
-    "position": "HR",
-    "itemType": "Ipad",
-    "deviceSerial": "iPad-005",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 48,
-    "date": "",
-    "user": "ศรัญญา ธรรมเนียมภักดี ( แนน )",
-    "position": "HR",
-    "itemType": "Notebook HP",
-    "deviceSerial": "HP-016",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 49,
-    "date": "",
-    "user": "ณัฐกานต์ ชิดปรางค์ (เตยหอม)",
-    "position": "Photographer",
-    "itemType": "IMac",
-    "deviceSerial": "MC-001",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 368,
-    "date": "",
-    "user": "วิจิตราภรณ์ พึ่งจันดุม (พลอย)",
-    "position": "Photographer",
-    "itemType": "IMac",
-    "deviceSerial": "MC-010",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 242,
-    "date": "16/07/2569",
-    "user": "ณัฐกานต์ ชิดปรางค์ (เตยหอม)",
-    "position": "Photographer",
-    "itemType": "Hub USB-TypeC",
-    "deviceSerial": "Fernclinic-MKT-001",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 75,
-    "date": "",
-    "user": "สรวิชญ์ สิทธิ ( บอม )",
-    "position": "Sale",
-    "itemType": "Ipad",
-    "deviceSerial": "iPad-002",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 81,
-    "date": "",
-    "user": "อาทิตย์ สมการ ( เจ้านาย )",
-    "position": "Sale",
-    "itemType": "Ipad",
-    "deviceSerial": "iPad-008",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 82,
-    "date": "",
-    "user": "สุนทรี บุญนาค ( ตาล )",
-    "position": "Sale",
-    "itemType": "Ipad",
-    "deviceSerial": "iPad-009",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 95,
-    "date": "",
-    "user": "สุนทรี บุญนาค ( ตาล )",
-    "position": "Sale",
-    "itemType": "Apple Pancill",
-    "deviceSerial": "Pencil-002",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 100,
-    "date": "",
-    "user": "สรวิชญ์ สิทธิ ( บอม )",
-    "position": "Sale",
-    "itemType": "Apple Pancill",
-    "deviceSerial": "Pencil-007",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 6,
-    "date": "",
-    "user": "กฤติน วิชัยดิษฐ (อ้น)crm",
-    "position": "CRM Officer",
-    "itemType": "Notebook Asus",
-    "deviceSerial": "ASUS-019",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 46,
-    "date": "",
-    "user": "กฤติญา ทาระพันธ์ (แจนนี่) crm",
-    "position": "CRM Officer",
-    "itemType": "Notebook Asus",
-    "deviceSerial": "ASUS-026",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 321,
-    "date": "18/05/2569",
-    "user": "ชนันพร อินขำ (ไอซ์)crm",
-    "position": "CRM Officer",
-    "itemType": "Notebook Asus",
-    "deviceSerial": "ASUS-003",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 361,
-    "date": "",
-    "user": "กฤติญา ทาระพันธ์ (แจนนี่) crm",
-    "position": "CRM Officer",
-    "itemType": "Samsung",
-    "deviceSerial": "Samsung Galaxy-001",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 307,
-    "date": "27/05/2569",
-    "user": "ปัณณวิชญ์ ทองวัน (บอย)",
-    "position": "Data Analysis",
-    "itemType": "Computer (Pc)",
-    "deviceSerial": "AS-001",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 309,
-    "date": "",
-    "user": "ปัณณวิชญ์ ทองวัน (บอย)",
-    "position": "Data Analysis",
-    "itemType": "Computer (Pc)",
-    "deviceSerial": "LG-001",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 311,
-    "date": "",
-    "user": "ปัณณวิชญ์ ทองวัน (บอย)",
-    "position": "Data Analysis",
-    "itemType": "Computer (Pc)",
-    "deviceSerial": "MSI-002",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 350,
-    "date": "",
-    "user": "ปัณณวิชญ์ ทองวัน (บอย)",
-    "position": "Data Analysis",
-    "itemType": "Notebook Asus",
-    "deviceSerial": "Asus-024",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 223,
-    "date": "",
-    "user": "ปัณณวิชญ์ ทองวัน (บอย)",
-    "position": "Data Analysis",
-    "itemType": "Mornitor",
-    "deviceSerial": "Asus-001",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 243,
-    "date": "",
-    "user": "ปัณณวิชญ์ ทองวัน (บอย)",
-    "position": "Data Analysis",
-    "itemType": "Cable HDMI",
-    "deviceSerial": "Fernclinic-IT-003",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 244,
-    "date": "",
-    "user": "ปัณณวิชญ์ ทองวัน (บอย)",
-    "position": "Data Analysis",
-    "itemType": "Cable HDMI",
-    "deviceSerial": "Fernclinic-IT-004",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 245,
-    "date": "",
-    "user": "ปัณณวิชญ์ ทองวัน (บอย)",
-    "position": "Data Analysis",
-    "itemType": "Cable HDMI",
-    "deviceSerial": "Fernclinic-IT-005",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 251,
-    "date": "28/05/2569",
-    "user": "ปัณณวิชญ์ ทองวัน (บอย)",
-    "position": "Data Analysis",
-    "itemType": "Keyboard",
-    "deviceSerial": "KBD-002",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 262,
-    "date": "",
-    "user": "ปัณณวิชญ์ ทองวัน (บอย)",
-    "position": "Data Analysis",
-    "itemType": "Keyboard",
-    "deviceSerial": "-",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 337,
-    "date": "04/06/2569",
-    "user": "อภิสิทธิ์ พรจันทราวัฒน์ (จุ้ย)",
-    "position": "Video Content Tiktok",
-    "itemType": "IMac",
-    "deviceSerial": "MC-005",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 310,
-    "date": "",
-    "user": "พงศกร ผ่องใส (ปอน)",
-    "position": "Live Producer",
-    "itemType": "Computer (Pc)",
-    "deviceSerial": "LG-002",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 266,
-    "date": "09/06/2569",
-    "user": "พิสิษฐ์ มงคลสมบัติศิริ (เจมส์)",
-    "position": "Live Producer",
-    "itemType": "Notebook Asus",
-    "deviceSerial": "ASUS-021",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 280,
-    "date": "",
-    "user": "พงศกร ผ่องใส (ปอน)",
-    "position": "Live Producer",
-    "itemType": "Mornitor",
-    "deviceSerial": "MSI-001",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 367,
-    "date": "",
-    "user": "นายพงศกร ผ่องใส",
-    "position": "Live Producer",
-    "itemType": "Mornitor",
-    "deviceSerial": "LG-006",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 30,
-    "date": "01/06/2569",
-    "user": "เย็นฤดี มาระวัง (ฝ้าย)",
-    "position": "Live Producer",
-    "itemType": "Notebook Lenovo",
-    "deviceSerial": "LENOVO-013",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 31,
-    "date": "05/05/2569",
-    "user": "พงศกร ผ่องใส (ปอน)",
-    "position": "Live Producer",
-    "itemType": "Notebook Lenovo",
-    "deviceSerial": "LENOVO-039",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 343,
-    "date": "",
-    "user": "ทีม live Producer",
-    "position": "Live Producer",
-    "itemType": "Hub USB-TypeC",
-    "deviceSerial": "usb-a to c",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 240,
-    "date": "",
-    "user": "พงศกร ผ่องใส (ปอน)",
-    "position": "Live Producer",
-    "itemType": "Capture Card",
-    "deviceSerial": "VCS-LIVE-0001",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 253,
-    "date": "",
-    "user": "พงศกร ผ่องใส (ปอน)",
-    "position": "Live Producer",
-    "itemType": "Cable HDMI",
-    "deviceSerial": "Fernclinic-IT-007",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 342,
-    "date": "",
-    "user": "ทีม live Producer",
-    "position": "Live Producer",
-    "itemType": "Cable HDMI",
-    "deviceSerial": "hdmi Canon",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 315,
-    "date": "",
-    "user": "พงศกร ผ่องใส (ปอน)",
-    "position": "Live Producer",
-    "itemType": "Reez Live",
-    "deviceSerial": "ไม่มีหมายเลข อุปกรณ์",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 344,
-    "date": "",
-    "user": "ทีม live Producer",
-    "position": "Live Producer",
-    "itemType": "อุปกรณ์เสริม/อื่นๆ",
-    "deviceSerial": "สาย aux branding",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 345,
-    "date": "",
-    "user": "ทีม live Producer",
-    "position": "Live Producer",
-    "itemType": "อุปกรณ์เสริม/อื่นๆ",
-    "deviceSerial": "hdmi ต่อจอมอนิเตอร์ไลฟ์",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 346,
-    "date": "",
-    "user": "ทีม live Producer",
-    "position": "Live Producer",
-    "itemType": "อุปกรณ์เสริม/อื่นๆ",
-    "deviceSerial": "hdmi it-002",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 347,
-    "date": "",
-    "user": "ทีม live Producer",
-    "position": "Live Producer",
-    "itemType": "อุปกรณ์เสริม/อื่นๆ",
-    "deviceSerial": "adc-006",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 348,
-    "date": "",
-    "user": "ทีม live Producer",
-    "position": "Live Producer",
-    "itemType": "อุปกรณ์เสริม/อื่นๆ",
-    "deviceSerial": "ไมค์ล่อย dji-branding",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 349,
-    "date": "",
-    "user": "ทีม live Producer",
-    "position": "Live Producer",
-    "itemType": "อุปกรณ์เสริม/อื่นๆ",
-    "deviceSerial": "ไมค์ล่อย dji-mkt",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 235,
-    "date": "",
-    "user": "ห้องประชุม บ้าน 18 ชั้น 4",
-    "position": "Meeting Room",
-    "itemType": "Hub USB-TypeC",
-    "deviceSerial": "Fernclinic-MKT-004",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 54,
-    "date": "",
-    "user": "อภิญญา ศรีตะวัน ( บอสต้น )",
-    "position": "Boss",
-    "itemType": "IMac",
-    "deviceSerial": "MC-006",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 55,
-    "date": "",
-    "user": "อภิญญา ศรีตะวัน ( บอสต้น )",
-    "position": "Boss",
-    "itemType": "IMac",
-    "deviceSerial": "MC-007",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 232,
-    "date": "",
-    "user": "อภิญญา ศรีตะวัน ( บอสต้น )",
-    "position": "Boss",
-    "itemType": "Hub USB-TypeC",
-    "deviceSerial": "Fernclinic-ฺBoss-001",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 241,
-    "date": "",
-    "user": "อภิญญา ศรีตะวัน ( บอสต้น )",
-    "position": "Boss",
-    "itemType": "Cable HDMI",
-    "deviceSerial": "Fernclinic-IT-001",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 233,
-    "date": "",
-    "user": "ห้อง Studio บ้าน 18 ชั้น 1",
-    "position": "Studio",
-    "itemType": "Hub USB-TypeC",
-    "deviceSerial": "Fernclinic-Studio-001",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 277,
-    "date": "26/12/2568",
-    "user": "นนท์สิรี ปลื้มทรัพย์ (ใบพลู)",
-    "position": "Data Entry",
-    "itemType": "Notebook Asus",
-    "deviceSerial": "Asus-041",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 29,
-    "date": "",
-    "user": "ปภาวี จันทร์ขวาง (ครีม)",
-    "position": "Data Entry",
-    "itemType": "Notebook Lenovo",
-    "deviceSerial": "LENOVO-012",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 125,
-    "date": "16/06/2569",
-    "user": "อารยา ธนพันธุ์พาณิชย์ (หนุงหนิง)",
-    "position": "Sale Manager",
-    "itemType": "Notebook Asus",
-    "deviceSerial": "ASUS-032",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 363,
-    "date": "19/01/2569",
-    "user": "ณัฐณิชา ศรีวรอรรถิกุล (ใบตอง)",
-    "position": "KOL & Event Marketing",
-    "itemType": "Iphone",
-    "deviceSerial": "IPhone -005",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 283,
-    "date": "19/01/2569",
-    "user": "ณัฐณิชา ศรีวรอรรถิกุล (ใบตอง)",
-    "position": "KOL & Event Marketing",
-    "itemType": "Notebook Lenovo",
-    "deviceSerial": "Lenovo-001",
-    "status": "ใช้งาน",
-    "notes": "รอตรวจสอบ"
-  },
-  {
-    "sn": 45,
-    "date": "",
-    "user": "พัทธนันท์ นาเดียร์  (นาเดียร์ )",
-    "position": "OR",
-    "itemType": "Notebook Asus",
-    "deviceSerial": "ASUS-025",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 60,
-    "date": "",
-    "user": "หมอฟาง",
-    "position": "CEO",
-    "itemType": "Macbook",
-    "deviceSerial": "MacBookAir-030",
-    "status": "ใช้งาน",
-    "notes": "     "
-  },
-  {
-    "sn": 215,
-    "date": "",
-    "user": "หมอฟาง",
-    "position": "CEO",
-    "itemType": "Macbook",
-    "deviceSerial": "MAcbook Pro-034",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 269,
-    "date": "",
-    "user": "หมอฟาง",
-    "position": "CEO",
-    "itemType": "Hub USB-TypeC",
-    "deviceSerial": "Fernclinic-MKT-005",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 236,
-    "date": "",
-    "user": "Connection Nas",
-    "position": "Center Storage",
-    "itemType": "External HDD",
-    "deviceSerial": "Segate Station 10 TB",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 237,
-    "date": "",
-    "user": "Connection Nas",
-    "position": "Center Storage",
-    "itemType": "External HDD",
-    "deviceSerial": "ETN-001  WD My Book 4TB",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 254,
-    "date": "",
-    "user": "Connection TV",
-    "position": "TV Center",
-    "itemType": "Cable HDMI",
-    "deviceSerial": "Fernclinic-IT-006",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 271,
-    "date": "",
-    "user": "Connection TV",
-    "position": "TV Center",
-    "itemType": "Cable HDMI",
-    "deviceSerial": "Fernclinic-IT-008",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 291,
-    "date": "",
-    "user": "Connection TV",
-    "position": "TV Center",
-    "itemType": "Cable HDMI",
-    "deviceSerial": "Fernclinic-IT-009",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 292,
-    "date": "",
-    "user": "Connection TV",
-    "position": "TV Center",
-    "itemType": "Cable HDMI",
-    "deviceSerial": "Fernclinic-IT-010",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 340,
-    "date": "06/07/2569",
-    "user": "นายสุทธิรงค์ เครือไพบูลย์กุล ( เบนซ์ )",
-    "position": "Senior Digital Marketing",
-    "itemType": "Notebook Lenovo",
-    "deviceSerial": "LENOVO-042",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 369,
-    "date": "10/07/2569",
-    "user": "สุรวิชญ์ โพธิ์ตาก (ไมค์เมโลดี้)",
-    "position": "Operation Department",
-    "itemType": "Macbook",
-    "deviceSerial": "Macbook-044",
-    "status": "ใช้งาน",
-    "notes": ""
-  },
-  {
-    "sn": 308,
-    "date": "",
-    "user": "ส่วนกลาง/ไม่ระบุ",
-    "position": "-",
-    "itemType": "Computer (Pc)",
-    "deviceSerial": "LG-003",
-    "status": "ว่าง",
-    "notes": ""
-  },
-  {
-    "sn": 264,
-    "date": "",
-    "user": "ส่วนกลาง/ไม่ระบุ",
-    "position": "-",
-    "itemType": "Notebook Asus",
-    "deviceSerial": "ASUS-036",
-    "status": "ว่าง",
-    "notes": ""
-  },
-  {
-    "sn": 316,
-    "date": "",
-    "user": "ส่วนกลาง/ไม่ระบุ",
-    "position": "-",
-    "itemType": "Notebook Asus",
-    "deviceSerial": "ASUS-018",
-    "status": "ว่าง",
-    "notes": ""
-  },
-  {
-    "sn": 328,
-    "date": "",
-    "user": "ส่วนกลาง/ไม่ระบุ",
-    "position": "-",
-    "itemType": "Macbook",
-    "deviceSerial": "MacBook air-035",
-    "status": "ว่าง",
-    "notes": ""
-  },
-  {
-    "sn": 50,
-    "date": "",
-    "user": "ส่วนกลาง/ไม่ระบุ",
-    "position": "-",
-    "itemType": "Ipad",
-    "deviceSerial": "iPad-004",
-    "status": "ว่าง",
-    "notes": ""
-  },
-  {
-    "sn": 80,
-    "date": "",
-    "user": "ส่วนกลาง/ไม่ระบุ",
-    "position": "-",
-    "itemType": "Ipad",
-    "deviceSerial": "iPad-007",
-    "status": "ว่าง",
-    "notes": ""
-  },
-  {
-    "sn": 84,
-    "date": "",
-    "user": "ส่วนกลาง/ไม่ระบุ",
-    "position": "-",
-    "itemType": "Ipad",
-    "deviceSerial": "iPad-011",
-    "status": "ว่าง",
-    "notes": ""
-  },
-  {
-    "sn": 131,
-    "date": "",
-    "user": "ส่วนกลาง/ไม่ระบุ",
-    "position": "-",
-    "itemType": "Ipad",
-    "deviceSerial": "iPad-006",
-    "status": "ว่าง",
-    "notes": ""
-  },
-  {
-    "sn": 117,
-    "date": "",
-    "user": "ส่วนกลาง/ไม่ระบุ",
-    "position": "-",
-    "itemType": "Printer",
-    "deviceSerial": "PT-001",
-    "status": "รอซ่อม",
-    "notes": ""
-  },
-  {
-    "sn": 230,
-    "date": "",
-    "user": "ส่วนกลาง/ไม่ระบุ",
-    "position": "-",
-    "itemType": "Hub USB-TypeC",
-    "deviceSerial": "Fernclinic-MKT-003",
-    "status": "ว่าง",
-    "notes": ""
-  },
-  {
-    "sn": 335,
-    "date": "",
-    "user": "ส่วนกลาง/ไม่ระบุ",
-    "position": "-",
-    "itemType": "Mouse",
-    "deviceSerial": "MC-009",
-    "status": "ว่าง",
-    "notes": ""
-  },
-  {
-    "sn": 261,
-    "date": "",
-    "user": "ส่วนกลาง/ไม่ระบุ",
-    "position": "-",
-    "itemType": "Keyboard",
-    "deviceSerial": "KBD-001",
-    "status": "ว่าง",
-    "notes": ""
-  }
-];
-
-const initialDashboardData = {
-  '2026-07': {
-    monthName: 'กรกฎาคม 2569',
-    totalAssets: 0,
-    assetValue: 0,
-    assetsExpiring: 0,
-    assetsBroken: 0,
-    assetsLost: 0,
-    assetsVacant: 0,
-    ticketsCount: 0,
-    slaPercent: 0,
-    responseTime: 0,
-    resolutionTime: 0,
-    csat: 0,
-    totalSoftware: 0,
-    licensesInUse: 0,
-    licensesVacant: 0,
-    softwareCost: 0,
-    softwareAnnualCost: 0,
-    softwareExpiring: 0,
-    backupSuccess: 0,
-    securityIncidents: 0,
-    antivirusCoverage: 0,
-    mfaCoverage: 0,
-    repairCount: 0,
-    repairCost: 0,
-    topBrokenDevices: [],
-    deptCosts: {},
-    softwareExpiringDetails: [],
-    assetsExpiringDetails: [],
-    ongoingProjects: [],
-    vendorContracts: [],
-    recommendations: [],
-    ticketsList: []
-  }
-};;
-
-
-
-
-
-
-
-
 
 const AssetTags = ({ value, empty = '-' }) => {
   const tags = String(value || '').split(/[,\n]+/).map((item) => item.trim()).filter(Boolean);
@@ -1900,7 +236,16 @@ function Dashboard({ currentUser, onLogout }) {
   const [assetDeptFilter, setAssetDeptFilter] = useState('');
   const [assetStatusFilter, setAssetStatusFilter] = useState('');
   const [assetTypeFilter, setAssetTypeFilter] = useState('');
-  const [assetRequests, setAssetRequests] = useState([]);
+  const [assetRequests, setAssetRequests] = useState(() => {
+    const saved = localStorage.getItem('it_dashboard_asset_requests');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return repairThaiTextDeep(parsed);
+      } catch {}
+    }
+    return initialAssetRequests || [];
+  });
   const [assetRequestLoading, setAssetRequestLoading] = useState(false);
   const [assetRequestForm, setAssetRequestForm] = useState({ requester: '', department: '', itemType: '', purpose: '', requestedDate: new Date().toISOString().slice(0, 10), estimatedPrice: '', notes: '', workflowType: '' });
   const [assetWorkflowRole, setAssetWorkflowRole] = useState('requester');
@@ -1928,6 +273,10 @@ function Dashboard({ currentUser, onLogout }) {
   const [consoleSaveMessage, setConsoleSaveMessage] = useState('');
   const [consoleAssetSearch, setConsoleAssetSearch] = useState('');
   const [editingAssetTagField, setEditingAssetTagField] = useState(null);
+  const [selectedAssetSns, setSelectedAssetSns] = useState([]);
+  const [bulkAssetField, setBulkAssetField] = useState('additionalEquipment');
+  const [bulkAssetValue, setBulkAssetValue] = useState('');
+  const [bulkAssetSaving, setBulkAssetSaving] = useState(false);
   const [lineNotifyTokenInput, setLineNotifyTokenInput] = useState('');
   const [lineNotifyTestStatus, setLineNotifyTestStatus] = useState('');
   const [lineNotifyTesting, setLineNotifyTesting] = useState(false);
@@ -3189,6 +1538,49 @@ function Dashboard({ currentUser, onLogout }) {
     setNewAssetPriceSourceUrl('');
     setNewAssetPriceCheckedAt('');
     setEditingAssetTagField(null);
+  };
+
+  const handleBulkAssetUpdate = async () => {
+    const selectedSnSet = new Set(selectedAssetSns.map(Number));
+    const selectedAssets = assetsList.filter((asset) => selectedSnSet.has(Number(asset.sn)));
+    const value = bulkAssetValue.trim();
+    if (selectedAssets.length === 0 || !value) {
+      alert('กรุณาเลือกรายการและระบุข้อมูลที่ต้องการแก้ไข');
+      return;
+    }
+    if (!window.confirm(`ยืนยันแก้ไขทรัพย์สิน ${selectedAssets.length} รายการพร้อมกันหรือไม่?`)) return;
+
+    setBulkAssetSaving(true);
+    const updatedAssets = [];
+    const failedAssets = [];
+    for (const asset of selectedAssets) {
+      try {
+        const patch = buildBulkAssetPatch(asset, { field: bulkAssetField, value });
+        const response = await authFetch(`${API_BASE}/api/assets/${asset.sn}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(patch)
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || !result.asset) throw new Error(result.error || 'บันทึกไม่สำเร็จ');
+        updatedAssets.push(repairThaiTextDeep(result.asset));
+      } catch (error) {
+        failedAssets.push({ sn: asset.sn, error: error.message });
+      }
+    }
+
+    if (updatedAssets.length > 0) {
+      const updatedBySn = new Map(updatedAssets.map((asset) => [Number(asset.sn), asset]));
+      setAssetsList((previous) => previous.map((asset) => updatedBySn.get(Number(asset.sn)) || asset));
+      setSelectedAssetSns((previous) => previous.filter((sn) => !updatedBySn.has(Number(sn))));
+      setBulkAssetValue('');
+    }
+    setBulkAssetSaving(false);
+    if (failedAssets.length > 0) {
+      alert(`แก้ไขสำเร็จ ${updatedAssets.length} รายการ และไม่สำเร็จ ${failedAssets.length} รายการ`);
+    } else {
+      alert(`แก้ไขข้อมูลพร้อมกันสำเร็จ ${updatedAssets.length} รายการ`);
+    }
   };
 
   const handleLoadEditAsset = (asset) => {
@@ -5688,6 +4080,7 @@ function Dashboard({ currentUser, onLogout }) {
   const monitoredActive = externalDevices.filter(d => d.status === 'active').length;
   const monitoredWarning = externalDevices.filter(d => d.status === 'active' && d.daysRemaining <= 7).length;
   const monitoredUnverified = externalDevices.filter(d => d.status !== 'active').length;
+  const deviceMonitorCoverage = reconcileDeviceMonitorCoverage(assetsList, externalDevices);
   const appBugReports = activeData.ticketsList.filter(ticket => {
     const searchableText = [ticket.issue, ticket.cause].filter(Boolean).join(' ');
     return /\[(?:dashboard bug|app bug|it dashboard)\]|it[- ]monthly[- ]dashboard|it-monthly-dashboard-new\.onrender\.com|บัค(?:ของ)?(?:ระบบ|แดชบอร์ด)|ปัญหา(?:ของ|บน)แดชบอร์ด/i.test(searchableText);
@@ -5715,7 +4108,7 @@ function Dashboard({ currentUser, onLogout }) {
       {/* SIDEBAR NAVIGATION CONTROL PANEL */}
       <aside id="dashboard-sidebar" className={`sidebar no-print ${mobileSidebarOpen ? 'mobile-active' : ''}`}>
         <div className="logo-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-          <img className="fern-brand-logo" src={fernAesthetiqueLogo} alt="Fern Aesthetique" />
+          <img className="fern-brand-logo" src={fernAesthetiqueLogo} alt="Fern Clinic" />
           <button 
             onClick={() => setMobileSidebarOpen(false)} 
             className="mobile-menu-close"
@@ -5959,9 +4352,9 @@ function Dashboard({ currentUser, onLogout }) {
 
         <div className="org-info">
           <p><strong>หน่วยงาน:</strong> ฝ่ายเทคโนโลยีสารสนเทศ (IT)</p>
-          <p><strong>องค์กร:</strong> Fern Aesthetique</p>
+          <p><strong>องค์กร:</strong> Fern Clinic</p>
           <p style={{ marginTop: '8px', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-            ปรับปรุงข้อมูลล่าสุด: <br />18 กรกฎาคม 2026
+            ปรับปรุงล่าสุด: <br />ตุลาคม 2569
           </p>
         </div>
       </aside>
@@ -6068,6 +4461,15 @@ function Dashboard({ currentUser, onLogout }) {
                 <div className="metric-value highlight-danger">{monitoredUnverified} เครื่อง</div>
               </div>
             </div>
+            {deviceMonitorCoverage.notTrackedCount > 0 && (
+              <div className="device-monitor-reconciliation" role="status">
+                <span className="device-monitor-reconciliation__value">{deviceMonitorCoverage.notTrackedCount} อุปกรณ์</span>
+                <span>
+                  ไม่อยู่ใน Device Monitor: ชำรุด/สูญหาย {deviceMonitorCoverage.excludedByStatusCount}
+                  {' '}• ใช้งานแต่ไม่พบหมายเลขที่ตรงกัน {deviceMonitorCoverage.missingAssignedCount}
+                </span>
+              </div>
+            )}
             <section className="embedded-dashboard-section improvement-section" aria-labelledby="improvement-section-title">
               <div className="card-header embedded-section-header">
                 <h3 className="card-title" id="improvement-section-title">
@@ -6189,7 +4591,10 @@ function Dashboard({ currentUser, onLogout }) {
             <div className="card-header">
               <h3 className="card-title">
                 <span className="card-icon"><Ticket size={18} style={{ color: 'var(--violet)' }} /></span>
-                การสนับสนุนผู้ใช้ (Support)
+                <span className="card-title-copy">
+                  <span>การสนับสนุนผู้ใช้ (Support)</span>
+                  <span className="card-title-subtitle">E-Ticketing ผ่าน Lark</span>
+                </span>
               </h3>
               <button 
                 onClick={() => setActiveModal('ticketsList')} 
@@ -6257,6 +4662,28 @@ function Dashboard({ currentUser, onLogout }) {
                   </div>
                 )}
               </div>
+              <section className="printer-report-embed" aria-labelledby="printer-report-title">
+                <div className="printer-report-embed__header">
+                  <div>
+                    <div className="metric-label">รายงานการใช้งานเครื่องพิมพ์</div>
+                    <strong id="printer-report-title">Printer &amp; Copier Usage Report</strong>
+                  </div>
+                  <a
+                    className="printer-report-embed__open"
+                    href={PRINTER_USAGE_REPORT_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    เปิดเต็มหน้า
+                  </a>
+                </div>
+                <iframe
+                  className="printer-report-embed__frame"
+                  src={PRINTER_USAGE_REPORT_URL}
+                  title="รายงานสถิติการใช้งานเครื่องพิมพ์และถ่ายเอกสาร"
+                  loading="lazy"
+                />
+              </section>
             </section>
           </article>
 
@@ -7451,9 +5878,9 @@ function Dashboard({ currentUser, onLogout }) {
               <div className="software-print-header">
                 <div className="software-pdf-title-row">
                   <div>
-                    <span className="software-pdf-eyebrow">FERN AESTHETIQUE · IT OPERATIONS</span>
+                    <span className="software-pdf-eyebrow">FERN CLINIC · IT OPERATIONS</span>
                     <h2>Software &amp; License Dashboard</h2>
-                    <p>ประจำเดือน {activeData.monthName} · ประเภท {softwareBillingFilter === 'monthly' ? 'รายเดือน' : softwareBillingFilter === 'yearly' ? 'รายปี' : 'ทั้งหมด'}</p>
+                    <p>ประจำเดือน {activeData.monthName} · แบบ {softwareBillingFilter === 'monthly' ? 'รายเดือน' : softwareBillingFilter === 'yearly' ? 'รายปี' : 'ทั้งหมด'}</p>
                   </div>
                   <div className="software-pdf-issued">
                     <strong>วันที่ออกรายงาน</strong>
@@ -8505,10 +6932,46 @@ function Dashboard({ currentUser, onLogout }) {
                       <span>แสดง {consoleAssets.length} จาก {assetsList.length} รายการ · จัดกลุ่มตามแผนก</span>
                     </div>
 
+                    {selectedAssetSns.length > 0 && (
+                      <div className="asset-bulk-toolbar" role="region" aria-label="แก้ไขทรัพย์สินหลายรายการ">
+                        <strong>เลือกแล้ว {selectedAssetSns.length} รายการ</strong>
+                        <select value={bulkAssetField} onChange={(event) => { setBulkAssetField(event.target.value); setBulkAssetValue(''); }} aria-label="เลือกข้อมูลที่จะแก้ไข">
+                          <option value="additionalEquipment">เพิ่ม Tag อุปกรณ์เสริม</option>
+                          <option value="itemType">เปลี่ยน Tag อุปกรณ์หลัก</option>
+                          <option value="position">เปลี่ยนตำแหน่ง / แผนก</option>
+                          <option value="status">เปลี่ยนสถานะ</option>
+                          <option value="notes">เปลี่ยนหมายเหตุ</option>
+                        </select>
+                        {bulkAssetField === 'status' ? (
+                          <select value={bulkAssetValue} onChange={(event) => setBulkAssetValue(event.target.value)} aria-label="เลือกสถานะใหม่">
+                            <option value="">เลือกสถานะ</option>
+                            {['ใช้งาน', 'ว่าง', 'จอง', 'รอซ่อม', 'ชำรุด', 'สูญหาย'].map((status) => <option key={status} value={status}>{status}</option>)}
+                          </select>
+                        ) : (
+                          <input value={bulkAssetValue} onChange={(event) => setBulkAssetValue(event.target.value)} placeholder={bulkAssetField === 'additionalEquipment' ? 'พิมพ์ Tag ที่ต้องการเพิ่ม' : 'พิมพ์ข้อมูลใหม่'} />
+                        )}
+                        <button type="button" className="asset-bulk-apply" onClick={handleBulkAssetUpdate} disabled={bulkAssetSaving || !bulkAssetValue.trim()}>{bulkAssetSaving ? 'กำลังบันทึก...' : 'บันทึกรายการที่เลือก'}</button>
+                        <button type="button" className="asset-bulk-clear" onClick={() => setSelectedAssetSns([])} disabled={bulkAssetSaving}>ยกเลิกการเลือก</button>
+                      </div>
+                    )}
+
                     <div className="console-table-scroll lark-registry-scroll">
                       <table className="details-table lark-registry-table">
                         <thead>
                           <tr>
+                            <th className="asset-select-column">
+                              <input
+                                type="checkbox"
+                                aria-label="เลือกทรัพย์สินทั้งหมดที่กำลังแสดง"
+                                checked={consoleAssets.length > 0 && consoleAssets.every((asset) => selectedAssetSns.includes(Number(asset.sn)))}
+                                onChange={(event) => {
+                                  const visibleSns = consoleAssets.map((asset) => Number(asset.sn));
+                                  setSelectedAssetSns((previous) => event.target.checked
+                                    ? [...new Set([...previous, ...visibleSns])]
+                                    : previous.filter((sn) => !visibleSns.includes(Number(sn))));
+                                }}
+                              />
+                            </th>
                             <th>Number</th>
                             <th>Submitted on</th>
                             <th>Respondents</th>
@@ -8543,13 +7006,23 @@ function Dashboard({ currentUser, onLogout }) {
                             <Fragment key={asset.sn ?? idx}>
                               {showGroup && (
                                 <tr className="lark-group-row">
-                                  <td colSpan="24">
+                                  <td colSpan="25">
                                     <span>{asset.position || 'ไม่ระบุแผนก'}</span>
                                     <small>{consoleAssets.filter((row) => String(row.position || '-') === String(asset.position || '-')).length} รายการ</small>
                                   </td>
                                 </tr>
                               )}
                             <tr>
+                              <td className="asset-select-column">
+                                <input
+                                  type="checkbox"
+                                  aria-label={`เลือกทรัพย์สินหมายเลข ${asset.sn}`}
+                                  checked={selectedAssetSns.includes(Number(asset.sn))}
+                                  onChange={(event) => setSelectedAssetSns((previous) => event.target.checked
+                                    ? [...new Set([...previous, Number(asset.sn)])]
+                                    : previous.filter((sn) => Number(sn) !== Number(asset.sn)))}
+                                />
+                              </td>
                               <td>{idx + 1}</td>
                               <td>{asset.submittedOn || '-'}</td>
                               <td>{asset.respondent || '-'}</td>
@@ -8955,9 +7428,9 @@ function Dashboard({ currentUser, onLogout }) {
               <div className="pdf-executive-report">
                 <div className="pdf-report-header">
                   <div className="pdf-logo-group">
-                    <img src={fernAesthetiqueLogo} alt="FERN AESTHETIQUE" className="pdf-logo" />
+                    <img src={fernAesthetiqueLogo} alt="FERN CLINIC" className="pdf-logo" />
                     <div>
-                      <h2>FERN AESTHETIQUE · IT OPERATIONS</h2>
+                      <h2>FERN CLINIC · IT OPERATIONS</h2>
                       <p>รายงานสรุปผลการดำเนินงานด้านเทคโนโลยีสารสนเทศและงบประมาณ</p>
                     </div>
                   </div>
@@ -9239,7 +7712,7 @@ function Dashboard({ currentUser, onLogout }) {
                     return (
                       <div className="qr-asset-tag-card" key={asset.sn}>
                         <div className="qr-tag-header">
-                          <span className="qr-brand-title">FERN AESTHETIQUE · IT TAG</span>
+                          <span className="qr-brand-title">FERN CLINIC · IT TAG</span>
                           <span className="qr-tag-code">#{asset.sn}</span>
                         </div>
                         <div className="qr-tag-body">
