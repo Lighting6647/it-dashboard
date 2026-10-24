@@ -4108,7 +4108,7 @@ function Dashboard({ currentUser, onLogout }) {
       {/* SIDEBAR NAVIGATION CONTROL PANEL */}
       <aside id="dashboard-sidebar" className={`sidebar no-print ${mobileSidebarOpen ? 'mobile-active' : ''}`}>
         <div className="logo-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-          <img className="fern-brand-logo" src={fernAesthetiqueLogo} alt="IT OPERATIONS" />
+          <img className="fern-brand-logo" src={fernAesthetiqueLogo} alt="IT OPS" />
           <button 
             onClick={() => setMobileSidebarOpen(false)} 
             className="mobile-menu-close"
@@ -7428,9 +7428,9 @@ function Dashboard({ currentUser, onLogout }) {
               <div className="pdf-executive-report">
                 <div className="pdf-report-header">
                   <div className="pdf-logo-group">
-                    <img src={fernAesthetiqueLogo} alt="IT OPERATIONS" className="pdf-logo" />
+                    <img src={fernAesthetiqueLogo} alt="IT OPS" className="pdf-logo" />
                     <div>
-                      <h2>IT OPERATIONS</h2>
+                      <h2>IT OPS · MONTHLY DASHBOARD</h2>
                       <p>รายงานสรุปผลการดำเนินงานด้านเทคโนโลยีสารสนเทศและงบประมาณ</p>
                     </div>
                   </div>
