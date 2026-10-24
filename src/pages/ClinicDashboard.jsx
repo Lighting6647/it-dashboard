@@ -122,8 +122,8 @@ const ClinicDashboard = () => {
           <button onClick={() => navigate('/')} style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '10px' }}>
             <ArrowLeft size={16} /> กลับไปยังหน้าระบบ IT
           </button>
-          <h1 style={{ margin: 0, fontSize: '24px', color: '#f3f4f6' }}>รายงานลูกค้า Fern Clinic (Customer Report)</h1>
-          <p style={{ margin: '5px 0 0 0', color: '#9ca3af' }}>ข้อมูลดึงจากไฟล์ Update/fern-clinic-customer-report.xls อัตโนมัติ</p>
+          <h1 style={{ margin: 0, fontSize: '24px', color: '#f3f4f6' }}>รายงานลูกค้า (Customer Operations Report)</h1>
+          <p style={{ margin: '5px 0 0 0', color: '#9ca3af' }}>ข้อมูลดึงจากไฟล์รายงานอัตโนมัติ</p>
         </div>
       </header>
 

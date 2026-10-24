@@ -4108,7 +4108,7 @@ function Dashboard({ currentUser, onLogout }) {
       {/* SIDEBAR NAVIGATION CONTROL PANEL */}
       <aside id="dashboard-sidebar" className={`sidebar no-print ${mobileSidebarOpen ? 'mobile-active' : ''}`}>
         <div className="logo-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-          <img className="fern-brand-logo" src={fernAesthetiqueLogo} alt="Fern Clinic" />
+          <img className="fern-brand-logo" src={fernAesthetiqueLogo} alt="IT OPERATIONS" />
           <button 
             onClick={() => setMobileSidebarOpen(false)} 
             className="mobile-menu-close"
@@ -4352,7 +4352,7 @@ function Dashboard({ currentUser, onLogout }) {
 
         <div className="org-info">
           <p><strong>หน่วยงาน:</strong> ฝ่ายเทคโนโลยีสารสนเทศ (IT)</p>
-          <p><strong>องค์กร:</strong> Fern Clinic</p>
+          <p><strong>ระบบ:</strong> IT Operations & Asset Management</p>
           <p style={{ marginTop: '8px', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
             ปรับปรุงล่าสุด: <br />ตุลาคม 2569
           </p>
@@ -5878,7 +5878,7 @@ function Dashboard({ currentUser, onLogout }) {
               <div className="software-print-header">
                 <div className="software-pdf-title-row">
                   <div>
-                    <span className="software-pdf-eyebrow">FERN CLINIC · IT OPERATIONS</span>
+                    <span className="software-pdf-eyebrow">IT OPERATIONS · ENTERPRISE SYSTEM</span>
                     <h2>Software &amp; License Dashboard</h2>
                     <p>ประจำเดือน {activeData.monthName} · แบบ {softwareBillingFilter === 'monthly' ? 'รายเดือน' : softwareBillingFilter === 'yearly' ? 'รายปี' : 'ทั้งหมด'}</p>
                   </div>
@@ -7428,9 +7428,9 @@ function Dashboard({ currentUser, onLogout }) {
               <div className="pdf-executive-report">
                 <div className="pdf-report-header">
                   <div className="pdf-logo-group">
-                    <img src={fernAesthetiqueLogo} alt="FERN CLINIC" className="pdf-logo" />
+                    <img src={fernAesthetiqueLogo} alt="IT OPERATIONS" className="pdf-logo" />
                     <div>
-                      <h2>FERN CLINIC · IT OPERATIONS</h2>
+                      <h2>IT OPERATIONS</h2>
                       <p>รายงานสรุปผลการดำเนินงานด้านเทคโนโลยีสารสนเทศและงบประมาณ</p>
                     </div>
                   </div>
@@ -7712,7 +7712,7 @@ function Dashboard({ currentUser, onLogout }) {
                     return (
                       <div className="qr-asset-tag-card" key={asset.sn}>
                         <div className="qr-tag-header">
-                          <span className="qr-brand-title">FERN CLINIC · IT TAG</span>
+                          <span className="qr-brand-title">IT OPERATIONS · ASSET TAG</span>
                           <span className="qr-tag-code">#{asset.sn}</span>
                         </div>
                         <div className="qr-tag-body">

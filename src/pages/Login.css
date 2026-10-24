@@ -152,16 +152,18 @@
 }
 
 .login-logo {
-  width: 175px !important;
+  width: 200px !important;
   height: auto !important;
-  aspect-ratio: 256 / 118;
+  aspect-ratio: 16 / 9;
   object-fit: contain !important;
   border-radius: 12px !important;
+  background: #ffffff;
+  padding: 6px 12px;
 }
 
 @media (max-width: 560px) {
   .login-logo {
-    width: 145px !important;
+    width: 160px !important;
     height: auto !important;
   }
 }
