@@ -1,16 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { KeyRound, Save, ShieldCheck, UserPlus, Users, X } from 'lucide-react';
-import { authFetch, ROLE_LABELS } from '../auth';
+import { authFetch, getOfflineUsers, ROLE_LABELS, saveOfflineUsers, sha256Hex } from '../auth';
 import './UserAccessManager.css';
 
 const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:5000' : '';
 const EMPTY_USER = { username: '', name: '', password: '', role: 'viewer' };
-
-async function readApiMessage(response) {
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(payload.message || 'ไม่สามารถบันทึกข้อมูลได้');
-  return payload;
-}
 
 export default function UserAccessManager({ currentUser, onClose }) {
   const [users, setUsers] = useState([]);
@@ -20,20 +14,28 @@ export default function UserAccessManager({ currentUser, onClose }) {
   const [saving, setSaving] = useState('');
   const [message, setMessage] = useState(null);
 
+  const applyUserList = useCallback((list) => {
+    setUsers(list);
+    setDrafts(Object.fromEntries(list.map((user) => [user.username, { ...user, password: '' }])));
+  }, []);
+
   const loadUsers = useCallback(async () => {
     setLoading(true);
     setMessage(null);
     try {
       const response = await authFetch(`${API_BASE}/api/auth/users`, { cache: 'no-store' });
-      const payload = await readApiMessage(response);
-      setUsers(payload.users || []);
-      setDrafts(Object.fromEntries((payload.users || []).map((user) => [user.username, { ...user, password: '' }])));
-    } catch (error) {
-      setMessage({ type: 'error', text: error.message });
+      const payload = await response.json().catch(() => ({}));
+      if (response.ok && Array.isArray(payload.users)) {
+        applyUserList(payload.users);
+        return;
+      }
+      applyUserList(getOfflineUsers());
+    } catch {
+      applyUserList(getOfflineUsers());
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [applyUserList]);
 
   useEffect(() => { loadUsers(); }, [loadUsers]);
 
@@ -49,12 +51,40 @@ export default function UserAccessManager({ currentUser, onClose }) {
     setSaving(username);
     setMessage(null);
     try {
-      const response = await authFetch(`${API_BASE}/api/auth/users/${encodeURIComponent(username)}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: draft.name, role: draft.role, active: draft.active, password: draft.password || undefined })
-      });
-      await readApiMessage(response);
+      let savedViaApi = false;
+      try {
+        const response = await authFetch(`${API_BASE}/api/auth/users/${encodeURIComponent(username)}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: draft.name, role: draft.role, active: draft.active, password: draft.password || undefined })
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (response.ok) {
+          savedViaApi = true;
+        } else if (response.status >= 400 && response.status < 500 && response.status !== 404 && payload.message) {
+          throw new Error(payload.message);
+        }
+      } catch (apiErr) {
+        if (apiErr.message && !apiErr.message.includes('Failed to fetch')) throw apiErr;
+      }
+
+      if (!savedViaApi) {
+        const currentOffline = getOfflineUsers();
+        const passwordHash = draft.password ? await sha256Hex(draft.password) : undefined;
+        const updatedOffline = currentOffline.map((user) =>
+          user.username === username
+            ? {
+                ...user,
+                name: draft.name,
+                role: draft.role,
+                active: draft.active !== false,
+                ...(passwordHash ? { passwordHash } : {})
+              }
+            : user
+        );
+        saveOfflineUsers(updatedOffline);
+      }
+
       setMessage({ type: 'success', text: `บันทึกสิทธิ์ของ ${username} แล้ว` });
       await loadUsers();
     } catch (error) {
@@ -69,12 +99,42 @@ export default function UserAccessManager({ currentUser, onClose }) {
     setSaving('new');
     setMessage(null);
     try {
-      const response = await authFetch(`${API_BASE}/api/auth/users`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newUser)
-      });
-      await readApiMessage(response);
+      let createdViaApi = false;
+      try {
+        const response = await authFetch(`${API_BASE}/api/auth/users`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newUser)
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (response.ok) {
+          createdViaApi = true;
+        } else if (response.status >= 400 && response.status < 500 && response.status !== 404 && payload.message) {
+          throw new Error(payload.message);
+        }
+      } catch (apiErr) {
+        if (apiErr.message && !apiErr.message.includes('Failed to fetch')) throw apiErr;
+      }
+
+      if (!createdViaApi) {
+        const currentOffline = getOfflineUsers();
+        const normalizedUsername = String(newUser.username || '').trim().toLowerCase();
+        if (currentOffline.some((u) => u.username === normalizedUsername)) {
+          throw new Error('User นี้มีอยู่แล้ว');
+        }
+        const passwordHash = await sha256Hex(newUser.password);
+        saveOfflineUsers([
+          ...currentOffline,
+          {
+            username: normalizedUsername,
+            name: String(newUser.name || '').trim(),
+            role: newUser.role || 'viewer',
+            active: true,
+            passwordHash
+          }
+        ]);
+      }
+
       setNewUser(EMPTY_USER);
       setMessage({ type: 'success', text: 'เพิ่มบัญชีผู้ใช้งานแล้ว' });
       await loadUsers();

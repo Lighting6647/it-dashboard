@@ -5,7 +5,7 @@ import {
   LockKeyhole, ShieldCheck, Sparkles, TicketCheck, UserRound
 } from 'lucide-react';
 import fernLogo from '../assets/fern-aesthetique-logo.png';
-import { storeAuth } from '../auth';
+import { storeAuth, verifyOfflineCredentials } from '../auth';
 import './Login.css';
 
 const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:5000' : '';
@@ -59,12 +59,35 @@ export default function Login({ onLogin }) {
 
   const submit = async (event) => {
     event.preventDefault(); setError(''); setLoading(true);
+    const trimmedUsername = username.trim();
     try {
-      const response = await fetch(`${API_BASE}/api/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: username.trim(), password }) });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(result.message || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
-      const auth = { token: result.token, user: result.user };
-      storeAuth(auth); onLogin(auth);
+      let apiErrorMessage = '';
+      try {
+        const response = await fetch(`${API_BASE}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: trimmedUsername, password })
+        });
+        const result = await response.json().catch(() => ({}));
+        if (response.ok && result.token && result.user) {
+          const auth = { token: result.token, user: result.user };
+          storeAuth(auth);
+          onLogin(auth);
+          return;
+        }
+        if (result.message) apiErrorMessage = result.message;
+      } catch {
+        // Backend unreachable or static deployment - fall through to offline check
+      }
+
+      const offlineAuth = await verifyOfflineCredentials(trimmedUsername, password);
+      if (offlineAuth) {
+        storeAuth(offlineAuth);
+        onLogin(offlineAuth);
+        return;
+      }
+
+      throw new Error(apiErrorMessage || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
     } catch (loginError) { setError(loginError.message || 'ไม่สามารถเข้าสู่ระบบได้'); }
     finally { setLoading(false); }
   };
