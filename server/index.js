@@ -102,6 +102,10 @@ function serializeAuthVersion(value) {
 
 async function findAuthUser(username) {
   const normalized = String(username || '').trim().toLocaleLowerCase('en-US');
+  if (!process.env.DATABASE_URL) {
+    const fallback = DEFAULT_AUTH_USERS.find((entry) => entry.username === normalized);
+    return fallback ? { ...fallback, active: true, authVersion: 'default' } : null;
+  }
   try {
     const result = await pool.query(
       'SELECT username, display_name AS name, role, password_hash AS "passwordHash", active, updated_at AS "authVersion" FROM auth_users WHERE username = $1',
@@ -370,12 +374,19 @@ app.get('/api/auth/me', requireAuth, (req, res) => {
 app.use('/api', requireAuth);
 
 app.get('/api/auth/users', requireRole('admin'), asyncRoute(async (_req, res) => {
-  const result = await pool.query(`
-    SELECT username, display_name AS name, role, active, created_at AS "createdAt", updated_at AS "updatedAt"
-    FROM auth_users
-    ORDER BY CASE role WHEN 'admin' THEN 1 WHEN 'staff' THEN 2 ELSE 3 END, username
-  `);
-  res.json({ users: result.rows });
+  if (!dbUrl) {
+    return res.json({ users: DEFAULT_AUTH_USERS.map((u) => ({ username: u.username, name: u.name, role: u.role, active: u.active !== false })) });
+  }
+  try {
+    const result = await pool.query(`
+      SELECT username, display_name AS name, role, active, created_at AS "createdAt", updated_at AS "updatedAt"
+      FROM auth_users
+      ORDER BY CASE role WHEN 'admin' THEN 1 WHEN 'staff' THEN 2 ELSE 3 END, username
+    `);
+    res.json({ users: result.rows });
+  } catch {
+    res.json({ users: DEFAULT_AUTH_USERS.map((u) => ({ username: u.username, name: u.name, role: u.role, active: u.active !== false })) });
+  }
 }));
 
 app.post('/api/auth/users', requireRole('admin'), asyncRoute(async (req, res) => {
@@ -591,6 +602,10 @@ async function normalizeVacantAssetOwnership(client) {
 }
 
 async function initDb() {
+  if (!dbUrl) {
+    console.warn('WARNING: DATABASE_URL is not set. Server will run in offline API fallback mode.');
+    return;
+  }
   try {
     const client = await pool.connect();
     try {
@@ -2013,18 +2028,6 @@ app.post('/internal/license-reminder/run', async (_req, res) => {
 
 
 
-app.use(express.static(path.join(__dirname, '../dist')));
-
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../dist/index.html'));
-});
-
-initDb().then(() => {
-  app.listen(PORT, () => {
-    console.log(`Backend Server is running on port ${PORT}`);
-  });
-});
-
 app.post('/api/test-line-notify', requireRole('admin'), async (req, res) => {
   const token = req.body?.token || process.env.LINE_NOTIFY_TOKEN;
   if (!token) {
@@ -2050,3 +2053,21 @@ app.post('/api/test-line-notify', requireRole('admin'), async (req, res) => {
     return res.status(500).json({ error: 'เกิดข้อผิดพลาดในการเชื่อมต่อ LINE Notify: ' + err.message });
   }
 });
+
+if (!process.env.VERCEL) {
+  app.use(express.static(path.join(__dirname, '../dist')));
+
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../dist/index.html'));
+  });
+
+  initDb().then(() => {
+    app.listen(PORT, () => {
+      console.log(`Backend Server is running on port ${PORT}`);
+    });
+  });
+} else {
+  initDb().catch((err) => console.error('Vercel DB init error:', err));
+}
+
+export default app;

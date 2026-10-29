@@ -4,7 +4,7 @@ import LarkForm from './pages/LarkForm';
 import Login from './pages/Login';
 import UserAccessManager from './pages/UserAccessManager';
 import fernAesthetiqueLogo from './assets/fern-aesthetique-logo.png';
-import { authFetch, canAdministerSystem, canEditOperationalData, clearAuth, getStoredAuth, ROLE_LABELS } from './auth';
+import { authFetch, canAdministerSystem, canEditOperationalData, clearAuth, getStoredAuth, isOfflineToken, ROLE_LABELS } from './auth';
 import { countPendingTicketClosures } from './utils/ticketMetrics';
 import { reconcileDeviceMonitorCoverage } from './utils/deviceMonitorMetrics';
 import { resolveEmbeddedReportUrl } from './utils/embeddedReport';
@@ -7990,18 +7990,18 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!auth?.token) {
+    if (!auth?.token || isOfflineToken(auth?.token)) {
       setCheckingAuth(false);
       return;
     }
     let cancelled = false;
     authFetch(`${API_BASE}/api/auth/me`, { cache: 'no-store' })
       .then(async (response) => {
-        if (!response.ok) throw new Error('session-invalid');
+        if (response.status === 401) throw new Error('session-invalid'); if (!response.ok) return;
         const result = await response.json();
         if (!cancelled) setAuth((current) => ({ ...current, user: result.user }));
       })
-      .catch(() => {
+      .catch((err) => { if (err?.message !== 'session-invalid') return;
         if (!cancelled) {
           clearAuth();
           setAuth(null);
