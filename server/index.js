@@ -1931,8 +1931,20 @@ app.post('/api/sync-all', requireRole('staff'), async (req, res) => {
   }
 });
 app.post('/api/reset-database', requireRole('admin'), async (req, res) => {
-  const client = await pool.connect();
+  fallbackDbState = {
+    dashboard: {},
+    assets: [],
+    assetRequests: []
+  };
+  saveFallbackDbState();
+
+  if (!dbUrl) {
+    return res.json({ success: true, message: 'Offline state has been completely wiped.' });
+  }
+
+  let client;
   try {
+    client = await pool.connect();
     await client.query('BEGIN');
     
     await client.query(`
@@ -1948,11 +1960,11 @@ app.post('/api/reset-database', requireRole('admin'), async (req, res) => {
     await client.query('COMMIT');
     res.json({ success: true, message: 'Database has been completely wiped.' });
   } catch (error) {
-    await client.query('ROLLBACK');
+    if (client) await client.query('ROLLBACK');
     console.error('Error resetting database:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   } finally {
-    client.release();
+    if (client) client.release();
   }
 });
 

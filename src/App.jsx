@@ -131,6 +131,66 @@ const AssetTagPicker = ({ value, onChange, options, single = false, onClose }) =
   );
 };
 
+const getBangkokCurrentMonthKey = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  return `${year}-${month}`;
+};
+
+const THAI_MONTH_NAMES = [
+  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+];
+
+const getBangkokCurrentMonthName = (monthKey) => {
+  const [yearStr, monthStr] = (monthKey || getBangkokCurrentMonthKey()).split('-');
+  const monthIdx = parseInt(monthStr, 10) - 1;
+  const thaiYear = parseInt(yearStr, 10) + 543;
+  return `${THAI_MONTH_NAMES[monthIdx] || ''} ${thaiYear}`;
+};
+
+const buildEmptyMonth = (key, name) => ({
+  monthName: name || getBangkokCurrentMonthName(key),
+  totalAssets: 0,
+  assetValue: 0,
+  assetsExpiring: 0,
+  assetsBroken: 0,
+  assetsLost: 0,
+  assetsVacant: 0,
+  ticketsCount: 0,
+  slaPercent: 100,
+  responseTime: 0,
+  resolutionTime: 0,
+  csat: 5.0,
+  totalSoftware: 0,
+  licensesInUse: 0,
+  licensesVacant: 0,
+  softwareCost: 0,
+  softwareAnnualCost: 0,
+  softwareExpiring: 0,
+  backupSuccess: 100,
+  securityIncidents: 0,
+  antivirusCoverage: 100,
+  mfaCoverage: 100,
+  repairCount: 0,
+  repairCost: 0,
+  topBrokenDevices: [],
+  deptCosts: {},
+  softwareExpiringDetails: [],
+  assetsExpiringDetails: [],
+  ongoingProjects: [],
+  vendorContracts: [],
+  recommendations: [],
+  ticketsList: []
+});
+
+const getEmptyDashboardState = () => {
+  const key = getBangkokCurrentMonthKey();
+  const name = getBangkokCurrentMonthName(key);
+  return { [key]: buildEmptyMonth(key, name) };
+};
+
 const isValidDashboardData = (value) => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const monthKeys = Object.keys(value);
@@ -213,6 +273,28 @@ function Dashboard({ currentUser, onLogout }) {
   const canEditOperations = canEditOperationalData(currentUser?.role);
   const canRequestService = ['admin', 'staff'].includes(currentUser?.role);
   const [data, setData] = useState(() => {
+    const isWiped = localStorage.getItem('it_dashboard_wiped') === 'true';
+    const saved = localStorage.getItem('it_dashboard_data');
+    if (!saved) return isWiped ? getEmptyDashboardState() : initialDashboardData;
+    try {
+      const parsed = JSON.parse(saved);
+      return isValidDashboardData(parsed) ? repairThaiTextDeep(parsed) : (isWiped ? getEmptyDashboardState() : initialDashboardData);
+    } catch {
+      return isWiped ? getEmptyDashboardState() : initialDashboardData;
+    }
+  });
+  const [assetsList, setAssetsList] = useState(() => {
+    const isWiped = localStorage.getItem('it_dashboard_wiped') === 'true';
+    const saved = localStorage.getItem('it_dashboard_assets');
+    if (!saved) return isWiped ? [] : initialAssetsData;
+    try {
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? repairThaiTextDeep(parsed) : (isWiped ? [] : initialAssetsData);
+    } catch {
+      return isWiped ? [] : initialAssetsData;
+    }
+  });
+  /* unused duplicate state block
     const saved = localStorage.getItem('it_dashboard_data');
     if (!saved) return initialDashboardData;
     try {
@@ -232,6 +314,7 @@ function Dashboard({ currentUser, onLogout }) {
       return initialAssetsData;
     }
   });
+  */
   const [assetSearch, setAssetSearch] = useState('');
   const [assetDeptFilter, setAssetDeptFilter] = useState('');
   const [assetStatusFilter, setAssetStatusFilter] = useState('');
@@ -244,7 +327,8 @@ function Dashboard({ currentUser, onLogout }) {
         if (Array.isArray(parsed) && parsed.length > 0) return repairThaiTextDeep(parsed);
       } catch {}
     }
-    return initialAssetRequests || [];
+    const isWiped = localStorage.getItem('it_dashboard_wiped') === 'true';
+    return isWiped ? [] : (initialAssetRequests || []);
   });
   const [assetRequestLoading, setAssetRequestLoading] = useState(false);
   const [assetRequestForm, setAssetRequestForm] = useState({ requester: '', department: '', itemType: '', purpose: '', requestedDate: new Date().toISOString().slice(0, 10), estimatedPrice: '', notes: '', workflowType: '' });
@@ -765,6 +849,10 @@ function Dashboard({ currentUser, onLogout }) {
           console.log('Successfully synced dashboard state with Render PostgreSQL database.');
         } else {
           // Database is empty. Seed it with the default initial data!
+          if (localStorage.getItem('it_dashboard_wiped') === 'true') {
+            console.log('System is in wiped blank slate mode. Keeping 0 assets / 0 tickets.');
+            return;
+          }
           console.log('PostgreSQL database is empty. Seeding initial baseline datasets...');
           await authFetch(`${API_BASE}/api/sync-all`, {
             method: 'POST',
@@ -1766,6 +1854,7 @@ function Dashboard({ currentUser, onLogout }) {
       try {
         const parsed = JSON.parse(evt.target.result);
         if (parsed.data && parsed.assetsList) {
+          localStorage.removeItem('it_dashboard_wiped');
           setData(parsed.data);
           setAssetsList(parsed.assetsList);
           alert('นำเข้าข้อมูลสำรองสำเร็จ!');
@@ -1780,7 +1869,41 @@ function Dashboard({ currentUser, onLogout }) {
   };
 
   const handleResetToDefault = async () => {
-    if (window.confirm('คำเตือน: คุณต้องการลบข้อมูลทั้งหมดในระบบใช่หรือไม่? ข้อมูลทั้งหมดที่บันทึกไว้ในฐานข้อมูลจะถูกล้างและไม่สามารถกู้คืนได้!')) {
+    if (window.confirm('คำเตือน: คุณต้องการลบข้อมูลทั้งหมดในระบบให้เป็นระบบว่างเปล่า 0 รายการ (Blank Slate) ใช่หรือไม่?\nข้อมูลทรัพย์สินและประวัติซ่อมทั้งหมดจะถูกลบและไม่สามารถกู้คืนได้!')) {
+      try {
+        await authFetch(`${API_BASE}/api/reset-database`, {
+          method: 'POST'
+        }).catch((e) => {
+          console.warn('Backend reset call warning (proceeding with local wipe):', e);
+        });
+
+        const currentKey = getBangkokCurrentMonthKey();
+        const freshEmptyData = getEmptyDashboardState();
+
+        localStorage.setItem('it_dashboard_wiped', 'true');
+        localStorage.setItem('it_dashboard_data', JSON.stringify(freshEmptyData));
+        localStorage.setItem('it_dashboard_assets', JSON.stringify([]));
+        localStorage.setItem('it_dashboard_asset_requests', JSON.stringify([]));
+        localStorage.removeItem('it_dashboard_pending_sync');
+
+        setData(freshEmptyData);
+        setAssetsList([]);
+        setAssetRequests([]);
+        setCurrentMonth(currentKey);
+        setConsoleMonth(currentKey);
+        setEditingAssetSn(null);
+        setEditingTicketSn(null);
+
+        alert('ล้างข้อมูลระบบทั้งหมดเรียบร้อยแล้ว ระบบเริ่มต้นใหม่ที่ 0 รายการ (Blank Slate)');
+        window.location.reload();
+        return;
+      } catch (error) {
+        console.error('Error resetting database:', error);
+        alert('เกิดข้อผิดพลาดในการลบข้อมูล: ' + error.message);
+        return;
+      }
+    }
+    if (false) {
       try {
         const response = await authFetch(`${API_BASE}/api/reset-database`, {
           method: 'POST'
