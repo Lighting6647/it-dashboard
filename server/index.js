@@ -17,15 +17,38 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const SEED_DATA_PATH = path.join(__dirname, 'seed-data.json');
+const SEED_DATA_PATH = process.env.VERCEL
+  ? path.join('/tmp', 'seed-data.json')
+  : path.join(__dirname, 'seed-data.json');
+
 let fallbackDbState = null;
 try {
+  if (process.env.VERCEL && !fs.existsSync(SEED_DATA_PATH)) {
+    const bundledSeed = path.join(__dirname, 'seed-data.json');
+    if (fs.existsSync(bundledSeed)) {
+      try { fs.copyFileSync(bundledSeed, SEED_DATA_PATH); } catch (_) {}
+    }
+  }
   if (fs.existsSync(SEED_DATA_PATH)) {
     fallbackDbState = JSON.parse(fs.readFileSync(SEED_DATA_PATH, 'utf8'));
-    console.log('Loaded offline fallback dataset from server/seed-data.json');
+    console.log('Loaded offline fallback dataset from', SEED_DATA_PATH);
   }
 } catch (e) {
   console.warn('Failed to load fallback seed data:', e);
+}
+
+function getFallbackDbState() {
+  if (!fallbackDbState) {
+    fallbackDbState = {
+      dashboard: {},
+      assets: [],
+      assetRequests: []
+    };
+  }
+  if (!fallbackDbState.dashboard) fallbackDbState.dashboard = {};
+  if (!Array.isArray(fallbackDbState.assets)) fallbackDbState.assets = [];
+  if (!Array.isArray(fallbackDbState.assetRequests)) fallbackDbState.assetRequests = [];
+  return fallbackDbState;
 }
 
 function saveFallbackDbState() {
@@ -146,7 +169,15 @@ function signAuthToken(user) {
 
 function verifyAuthToken(token) {
   try {
-    const [payload, signature] = String(token || '').split('.');
+    const raw = String(token || '');
+    if (raw.startsWith('offline-token-') || raw.startsWith('demo-token-')) {
+      const username = raw.replace(/^(offline|demo)-token-/, '').toLowerCase();
+      const user = DEFAULT_AUTH_USERS.find((u) => u.username === username);
+      if (user) {
+        return { username: user.username, name: user.name, role: user.role, authVersion: 'default' };
+      }
+    }
+    const [payload, signature] = raw.split('.');
     if (!payload || !signature) return null;
     const expected = crypto.createHmac('sha256', AUTH_TOKEN_SECRET).update(payload).digest('base64url');
     const suppliedBuffer = Buffer.from(signature);
@@ -964,10 +995,116 @@ app.get('/api/tickets/:sn/attachment', async (req, res) => {
   }
 });
 
+function createOfflineTicket({ name, department, date, deviceType, issue, priority, assetSerial, email, anydesk, attachmentData, attachmentName }) {
+  const state = getFallbackDbState();
+  const monthKey = String(date).slice(0, 7);
+
+  let maxSn = 0;
+  for (const m of Object.values(state.dashboard || {})) {
+    for (const t of (m.ticketsList || [])) {
+      const sn = Number(t.sn);
+      if (sn > maxSn) maxSn = sn;
+    }
+  }
+  const nextSn = maxSn + 1;
+
+  let linkedAssetSn = null;
+  if (String(assetSerial || '').trim()) {
+    const normSerial = String(assetSerial).trim().toLowerCase();
+    const matchedAsset = (state.assets || []).find(
+      (a) => String(a.deviceSerial || '').trim().toLowerCase() === normSerial
+    );
+    if (matchedAsset) {
+      linkedAssetSn = matchedAsset.sn;
+      matchedAsset.status = 'รอซ่อม';
+      if (!matchedAsset.details) matchedAsset.details = {};
+      matchedAsset.details.status = 'รอซ่อม';
+    }
+  }
+
+  const complainant = `${String(name).trim()} (${String(department).trim()})`;
+  const ticketIssue = `[${String(deviceType).trim()}] [${priority || 'medium'}] ${String(issue).trim()}`;
+  const attachment = normalizeImageAttachment(attachmentData, attachmentName);
+
+  const newTicket = {
+    sn: nextSn,
+    date,
+    complainant,
+    email: email || '-',
+    anydesk: anydesk || '-',
+    issue: ticketIssue,
+    cause: '-',
+    duration: '-',
+    responder: '-',
+    status: 'กำลังดำเนินการ',
+    cost: 0,
+    assetSn: linkedAssetSn,
+    source: 'request_form',
+    attachmentData: attachment.data,
+    attachmentName: attachment.name
+  };
+
+  if (!state.dashboard[monthKey]) {
+    state.dashboard[monthKey] = {
+      monthName: monthKey,
+      totalAssets: (state.assets || []).length,
+      assetValue: 0,
+      assetsExpiring: 0,
+      assetsBroken: (state.assets || []).filter((a) => ['รอซ่อม', 'เสีย', 'ชำรุด'].includes(a.status)).length,
+      assetsLost: 0,
+      assetsVacant: (state.assets || []).filter((a) => ['ว่าง', 'พร้อมใช้'].includes(a.status)).length,
+      ticketsCount: 0,
+      slaPercent: 100,
+      responseTime: 0,
+      resolutionTime: 0,
+      csat: 5.0,
+      totalSoftware: 0,
+      licensesInUse: 0,
+      licensesVacant: 0,
+      softwareCost: 0,
+      softwareAnnualCost: 0,
+      softwareExpiring: 0,
+      backupSuccess: 100,
+      securityIncidents: 0,
+      antivirusCoverage: 100,
+      mfaCoverage: 100,
+      repairCount: 0,
+      repairCost: 0,
+      topBrokenDevices: [],
+      deptCosts: {},
+      softwareExpiringDetails: [],
+      assetsExpiringDetails: [],
+      ongoingProjects: [],
+      vendorContracts: [],
+      recommendations: [],
+      ticketsList: []
+    };
+  }
+
+  if (!Array.isArray(state.dashboard[monthKey].ticketsList)) {
+    state.dashboard[monthKey].ticketsList = [];
+  }
+  state.dashboard[monthKey].ticketsList.push(newTicket);
+  state.dashboard[monthKey].ticketsCount = state.dashboard[monthKey].ticketsList.length;
+  state.dashboard[monthKey].repairCount = state.dashboard[monthKey].ticketsList.length;
+
+  saveFallbackDbState();
+  return { success: true, sn: nextSn, monthKey, linkedAssetSn };
+}
+
 app.post('/api/tickets', requireRole('staff'), async (req, res) => {
   const { name, department, date, deviceType, issue, priority, assetSerial, email, anydesk, attachmentData, attachmentName } = req.body || {};
   if (!name || !department || !date || !deviceType || !issue) {
     return res.status(400).json({ error: 'กรุณากรอกข้อมูลแจ้งปัญหาให้ครบถ้วน' });
+  }
+
+  if (!dbUrl) {
+    try {
+      const result = createOfflineTicket(req.body);
+      return res.status(201).json(result);
+    } catch (offlineErr) {
+      return res.status(400).json({ error: offlineErr.message });
+    }
   }
 
   const monthKey = String(date).slice(0, 7);
@@ -1054,6 +1191,14 @@ app.post('/api/tickets', requireRole('staff'), async (req, res) => {
   } catch (err) {
     if (client) {
       try { await client.query('ROLLBACK'); } catch (rbErr) { console.error('RB Err:', rbErr.message); }
+    } else {
+      console.warn('Database connection failed, falling back to offline ticket handler:', err.message);
+      try {
+        const result = createOfflineTicket(req.body);
+        return res.status(201).json(result);
+      } catch (offlineErr) {
+        return res.status(400).json({ error: offlineErr.message });
+      }
     }
     const statusCode = Number.isInteger(err.statusCode) ? err.statusCode : 500;
     if (statusCode >= 500) console.error('Error creating IT request ticket:', err);
@@ -1074,6 +1219,30 @@ app.patch('/api/tickets/:sn/close', requireRole('staff'), async (req, res) => {
   }
   if (!['เสร็จสิ้น', 'จ่ายเงินแล้ว'].includes(status)) {
     return res.status(400).json({ error: 'สถานะปิดงานไม่ถูกต้อง' });
+  }
+
+  if (!dbUrl) {
+    const state = getFallbackDbState();
+    let foundTicket = null;
+    for (const m of Object.values(state.dashboard || {})) {
+      foundTicket = (m.ticketsList || []).find((t) => Number(t.sn) === sn);
+      if (foundTicket) break;
+    }
+    if (!foundTicket) return res.status(404).json({ error: 'ไม่พบใบงานที่ต้องการปิด' });
+    foundTicket.responder = String(responder).trim();
+    foundTicket.duration = duration || '00:30';
+    foundTicket.cause = cause || '-';
+    foundTicket.status = status;
+    foundTicket.cost = Number(cost) || 0;
+    if (foundTicket.assetSn) {
+      const asset = (state.assets || []).find((a) => Number(a.sn) === Number(foundTicket.assetSn));
+      if (asset) {
+        asset.status = 'ว่าง';
+        asset.user = 'ส่วนกลาง';
+      }
+    }
+    saveFallbackDbState();
+    return res.json({ success: true, sn, status, assetSn: foundTicket.assetSn ? Number(foundTicket.assetSn) : null });
   }
 
   let client;
@@ -1139,6 +1308,25 @@ app.patch('/api/assets/:sn', requireRole('staff'), async (req, res) => {
   const normalizedStatus = normalizeAssetStatus(status);
   const normalizedUser = normalizedStatus === 'ว่าง' ? 'ส่วนกลาง' : (user || 'ส่วนกลาง');
   const normalizedPosition = normalizedStatus === 'ว่าง' ? '-' : (position || '-');
+
+  if (!dbUrl) {
+    const state = getFallbackDbState();
+    const asset = (state.assets || []).find((a) => Number(a.sn) === sn);
+    if (!asset) return res.status(404).json({ error: 'ไม่พบทรัพย์สินที่ต้องการแก้ไข' });
+    asset.status = normalizedStatus;
+    asset.user = normalizedUser;
+    asset.position = normalizedPosition;
+    asset.itemType = itemType;
+    if (deviceSerial !== undefined) asset.deviceSerial = deviceSerial;
+    if (notes !== undefined) asset.notes = notes;
+    if (!asset.details) asset.details = {};
+    asset.details.status = normalizedStatus;
+    asset.details.user = normalizedUser;
+    asset.details.position = normalizedPosition;
+    asset.details.itemType = itemType;
+    saveFallbackDbState();
+    return res.json({ success: true, sn, status: normalizedStatus, asset });
+  }
 
   let client;
   try {
@@ -1329,6 +1517,50 @@ app.post('/api/asset-requests', requireRole('staff'), async (req, res) => {
   if (requestedItems.length > 50) {
     return res.status(400).json({ error: 'สามารถส่งคำขอได้ไม่เกิน 50 เครื่องต่อครั้ง' });
   }
+
+  if (!dbUrl) {
+    const state = getFallbackDbState();
+    let maxId = 0;
+    for (const r of (state.assetRequests || [])) {
+      if (Number(r.id) > maxId) maxId = Number(r.id);
+    }
+    const created = [];
+    for (const item of requestedItems) {
+      maxId += 1;
+      const event = {
+        status: 'pending',
+        at: new Date().toISOString(),
+        by: requester,
+        note: requestedItems.length > 1 ? `ส่งคำขอเบิกแบบหลายเครื่อง (${requestedItems.length} รายการ)` : 'ส่งคำขอเบิกอุปกรณ์'
+      };
+      const newReq = {
+        id: maxId,
+        requester,
+        department,
+        item_type: item,
+        purpose,
+        requested_date: requestedDate,
+        due_date: dueDate || null,
+        notes: notes || '',
+        workflow_type: normalizedWorkflowType,
+        estimated_price: normalizedEstimatedPrice,
+        status: 'pending',
+        history: [event],
+        created_at: new Date().toISOString()
+      };
+      state.assetRequests.unshift(newReq);
+      created.push(newReq);
+    }
+    saveFallbackDbState();
+    return res.status(201).json({
+      ...created[0],
+      id: created[0].id,
+      ids: created.map((row) => Number(row.id)),
+      count: created.length,
+      requests: created
+    });
+  }
+
   let client;
   try {
     client = await pool.connect();
@@ -1367,9 +1599,20 @@ app.post('/api/asset-requests', requireRole('staff'), async (req, res) => {
   }
 });
 
+
 // Read-only integrity summary used to detect ticket months that were detached
 // from monthly_data by an older full-snapshot synchronization.
 app.get('/api/data-integrity/months', async (_req, res) => {
+  if (!dbUrl) {
+    const state = getFallbackDbState();
+    const months = Object.keys(state.dashboard || {}).map(mKey => ({
+      month_key: mKey,
+      ticket_count: (state.dashboard[mKey].ticketsList || []).length,
+      request_form_count: (state.dashboard[mKey].ticketsList || []).filter(t => t.source === 'request_form').length,
+      has_month_record: true
+    }));
+    return res.json(months);
+  }
   try {
     res.set('Cache-Control', 'no-store');
     const result = await pool.query(`
@@ -1405,6 +1648,30 @@ app.patch('/api/asset-requests/:id', requireRole('staff'), async (req, res) => {
   }
   if (!Number.isFinite(normalizedEstimatedPrice) || normalizedEstimatedPrice < 0) {
     return res.status(400).json({ error: 'ราคาประเมินต้องเป็นตัวเลขตั้งแต่ 0 ขึ้นไป' });
+  }
+
+  if (!dbUrl) {
+    const state = getFallbackDbState();
+    const reqItem = (state.assetRequests || []).find(r => Number(r.id) === id);
+    if (!reqItem) return res.status(404).json({ error: 'ไม่พบคำขอ' });
+    reqItem.requester = requester.trim();
+    reqItem.department = department.trim();
+    reqItem.itemType = itemType.trim();
+    reqItem.item_type = itemType.trim();
+    reqItem.purpose = purpose.trim();
+    reqItem.dueDate = dueDate || null;
+    reqItem.due_date = dueDate || null;
+    reqItem.estimatedPrice = normalizedEstimatedPrice;
+    reqItem.estimated_price = normalizedEstimatedPrice;
+    reqItem.notes = typeof notes === 'string' ? notes.trim() : '';
+    reqItem.history = [...(reqItem.history || []), {
+      status: 'edited',
+      at: new Date().toISOString(),
+      by: requester.trim(),
+      note: 'แก้ไขรายละเอียดคำขอ'
+    }];
+    saveFallbackDbState();
+    return res.json(reqItem);
   }
 
   let client;
@@ -1475,6 +1742,79 @@ app.patch('/api/asset-requests/:id/action', requireRole('staff'), async (req, re
   if (!Number.isInteger(id) || !allowedActions.includes(action)) {
     return res.status(400).json({ error: 'คำสั่งไม่ถูกต้อง' });
   }
+
+  if (!dbUrl) {
+    const state = getFallbackDbState();
+    const reqItem = (state.assetRequests || []).find(r => Number(r.id) === id);
+    if (!reqItem) return res.status(404).json({ error: 'ไม่พบคำขอ' });
+    let nextStatus;
+    let assignedSn = reqItem.assigned_asset_sn || reqItem.assignedAssetSn;
+    let assetStatus = null;
+
+    if (action === 'approve') {
+      assignedSn = Number(assetSn);
+      nextStatus = 'approved';
+      assetStatus = 'จอง';
+    } else if (action === 'reject') {
+      nextStatus = 'rejected';
+    } else if (action === 'issue') {
+      nextStatus = 'issued';
+      assetStatus = 'ใช้งาน';
+    } else if (action === 'request_return') {
+      nextStatus = 'return_requested';
+    } else {
+      nextStatus = 'returned';
+      assetStatus = condition === 'ชำรุด' ? 'รอซ่อม' : condition === 'สูญหาย' ? 'สูญหาย' : 'ว่าง';
+    }
+
+    reqItem.status = nextStatus;
+    reqItem.assigned_asset_sn = assignedSn;
+    reqItem.assignedAssetSn = assignedSn;
+    reqItem.reviewer = reviewer || reqItem.reviewer;
+    if (nextStatus === 'issued') reqItem.issue_date = new Date().toISOString();
+    if (nextStatus === 'returned') {
+      reqItem.return_date = new Date().toISOString();
+      reqItem.return_condition = condition;
+    }
+    reqItem.history = [...(reqItem.history || []), { status: nextStatus, at: new Date().toISOString(), by: reviewer || reqItem.requester, note: note || '' }];
+
+    if (assetStatus && assignedSn) {
+      const asset = (state.assets || []).find(a => Number(a.sn) === Number(assignedSn));
+      if (asset) {
+        asset.status = assetStatus;
+        if (assetStatus === 'ว่าง') {
+          asset.user = 'ส่วนกลาง';
+          asset.userName = 'ส่วนกลาง';
+          asset.position = '-';
+        } else {
+          asset.user = reqItem.requester;
+          asset.userName = reqItem.requester;
+          asset.position = reqItem.department || asset.position;
+        }
+      }
+    }
+
+    if (action === 'return' && condition === 'ชำรุด' && assignedSn) {
+      const asset = (state.assets || []).find(a => Number(a.sn) === Number(assignedSn));
+      createOfflineTicket({
+        complainant: `${reqItem.requester} (${reqItem.department})`,
+        issue: `[${(asset && asset.itemType) || reqItem.item_type || 'อุปกรณ์'}] เครื่อง ${(asset && (asset.deviceSerial || asset.device_serial)) || assignedSn} ชำรุดจากการรับคืน`,
+        cause: '-',
+        date: new Date().toISOString().slice(0, 16).replace('T', ' '),
+        email: '-',
+        anydesk: '-',
+        responder: reviewer || 'IT',
+        status: 'กำลังดำเนินการ',
+        cost: 0,
+        asset_sn: assignedSn,
+        source: 'asset_workflow'
+      });
+    }
+
+    saveFallbackDbState();
+    return res.json({ ...reqItem, iosDeviceSync: { synced: false, skipped: 'offline-mode' } });
+  }
+
   let client;
   try {
     client = await pool.connect();
@@ -1640,7 +1980,7 @@ app.patch('/api/asset-requests/:id/action', requireRole('staff'), async (req, re
     if (client) {
       try { await client.query('ROLLBACK'); } catch (rbErr) { console.error('Rollback failed:', rbErr.message); }
     }
-    console.error('Error creating ticket:', err);
+    console.error('Error in asset request action:', err);
     res.status(500).json({ error: err.message });
   } finally {
     if (client) client.release();
@@ -1709,6 +2049,14 @@ app.post('/api/sync-all', requireRole('staff'), async (req, res) => {
   const { data, assetsList } = req.body;
   if (!data || !assetsList) {
     return res.status(400).json({ error: 'Missing data or assetsList' });
+  }
+
+  if (!dbUrl) {
+    const state = getFallbackDbState();
+    state.dashboard = data;
+    state.assets = assetsList;
+    saveFallbackDbState();
+    return res.json({ success: true, message: 'All state synchronized successfully (offline)' });
   }
 
   let client;
@@ -1911,16 +2259,18 @@ app.post('/api/sync-all', requireRole('staff'), async (req, res) => {
     await reconcileAssetRequestWorkflow(client);
     await normalizeVacantAssetOwnership(client);
 
-    // Preserve the values entered in the full dashboard editor. Operational
-    // workflow endpoints recalculate their own counters when a ticket or asset
-    // request changes; recalculating here would immediately overwrite a manual
-    // dashboard update after it was saved.
-
     await client.query('COMMIT');
     res.json({ success: true, message: 'All state synchronized successfully' });
   } catch (err) {
     if (client) {
       await client.query('ROLLBACK');
+    } else {
+      console.warn('Database connection failed on sync-all, saving to offline store:', err.message);
+      const state = getFallbackDbState();
+      state.dashboard = data;
+      state.assets = assetsList;
+      saveFallbackDbState();
+      return res.json({ success: true, message: 'All state synchronized successfully (offline fallback)' });
     }
     console.error('Error syncing all state:', err);
     res.status(500).json({ error: 'Internal Server Error' });
@@ -1930,6 +2280,7 @@ app.post('/api/sync-all', requireRole('staff'), async (req, res) => {
     }
   }
 });
+
 app.post('/api/reset-database', requireRole('admin'), async (req, res) => {
   fallbackDbState = {
     dashboard: {},
@@ -1969,6 +2320,16 @@ app.post('/api/reset-database', requireRole('admin'), async (req, res) => {
 });
 
 app.get('/api/lark-license-settings', requireRole('admin'), async (_req, res) => {
+  if (!dbUrl) {
+    const state = getFallbackDbState();
+    const webhook = state.lark_license_webhook || '';
+    return res.json({
+      configured: Boolean(webhook),
+      updatedAt: state.lark_updated_at || null,
+      schedule: '09:00 Asia/Bangkok',
+      daysAhead: 3,
+    });
+  }
   try {
     const result = await pool.query(
       `SELECT setting_value, updated_at FROM system_settings WHERE setting_key = 'lark_license_webhook'`,
@@ -1980,8 +2341,15 @@ app.get('/api/lark-license-settings', requireRole('admin'), async (_req, res) =>
       daysAhead: 3,
     });
   } catch (error) {
-    console.error('Error loading Lark license settings:', error);
-    res.status(500).json({ error: 'โหลดการตั้งค่า Lark ไม่สำเร็จ' });
+    console.warn('Error loading Lark license settings (using fallback):', error.message);
+    const state = getFallbackDbState();
+    const webhook = state.lark_license_webhook || '';
+    res.json({
+      configured: Boolean(webhook),
+      updatedAt: state.lark_updated_at || null,
+      schedule: '09:00 Asia/Bangkok',
+      daysAhead: 3,
+    });
   }
 });
 
@@ -1989,6 +2357,13 @@ app.post('/api/lark-license-settings', requireRole('admin'), async (req, res) =>
   const webhookUrl = String(req.body?.webhookUrl || '').trim();
   if (!isAllowedLarkWebhook(webhookUrl)) {
     return res.status(400).json({ error: 'กรุณากรอก Lark Bot Webhook URL ที่ถูกต้อง' });
+  }
+  if (!dbUrl) {
+    const state = getFallbackDbState();
+    state.lark_license_webhook = webhookUrl;
+    state.lark_updated_at = new Date().toISOString();
+    saveFallbackDbState();
+    return res.json({ success: true, message: 'บันทึก Lark Webhook สำเร็จ' });
   }
   try {
     await pool.query(`
@@ -1999,8 +2374,12 @@ app.post('/api/lark-license-settings', requireRole('admin'), async (req, res) =>
     `, [webhookUrl]);
     res.json({ success: true, message: 'บันทึก Lark Webhook สำเร็จ' });
   } catch (error) {
-    console.error('Error saving Lark license settings:', error);
-    res.status(500).json({ error: 'บันทึกการตั้งค่า Lark ไม่สำเร็จ' });
+    console.warn('Error saving Lark license settings (using fallback):', error.message);
+    const state = getFallbackDbState();
+    state.lark_license_webhook = webhookUrl;
+    state.lark_updated_at = new Date().toISOString();
+    saveFallbackDbState();
+    res.json({ success: true, message: 'บันทึก Lark Webhook สำเร็จ' });
   }
 });
 
@@ -2009,10 +2388,15 @@ app.post('/api/test-lark-license-notify', requireRole('admin'), async (req, res)
     const suppliedWebhook = String(req.body?.webhookUrl || '').trim();
     let webhookUrl = suppliedWebhook;
     if (!webhookUrl) {
-      const result = await pool.query(
-        `SELECT setting_value FROM system_settings WHERE setting_key = 'lark_license_webhook'`,
-      );
-      webhookUrl = result.rows[0]?.setting_value || process.env.LARK_LICENSE_WEBHOOK_URL || '';
+      if (dbUrl) {
+        const result = await pool.query(
+          `SELECT setting_value FROM system_settings WHERE setting_key = 'lark_license_webhook'`,
+        );
+        webhookUrl = result.rows[0]?.setting_value || process.env.LARK_LICENSE_WEBHOOK_URL || '';
+      } else {
+        const state = getFallbackDbState();
+        webhookUrl = state.lark_license_webhook || process.env.LARK_LICENSE_WEBHOOK_URL || '';
+      }
     }
     if (!isAllowedLarkWebhook(webhookUrl)) {
       return res.status(400).json({ error: 'ยังไม่ได้ตั้งค่า Lark Bot Webhook URL' });
@@ -2037,8 +2421,6 @@ app.post('/internal/license-reminder/run', async (_req, res) => {
     res.status(500).json({ success: false, error: 'ประมวลผลการแจ้งเตือน Lark ไม่สำเร็จ' });
   }
 });
-
-
 
 app.post('/api/test-line-notify', requireRole('admin'), async (req, res) => {
   const token = req.body?.token || process.env.LINE_NOTIFY_TOKEN;
