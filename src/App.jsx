@@ -841,6 +841,19 @@ function Dashboard({ currentUser, onLogout }) {
         const result = await res.json();
         
         if (result.data && Object.keys(result.data).length > 0) {
+          if (localStorage.getItem('it_dashboard_wiped') === 'true') {
+            console.log('System was wiped by admin. Keeping blank slate...');
+            const freshEmptyData = getEmptyDashboardState();
+            setData(freshEmptyData);
+            setAssetsList([]);
+            setAssetRequests([]);
+            await authFetch(`${API_BASE}/api/sync-all`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ data: freshEmptyData, assetsList: [] })
+            }).catch(() => {});
+            return;
+          }
           isPollingUpdateRef.current = true;
           setData(repairThaiTextDeep(result.data));
           if (result.assetsList) {
@@ -910,6 +923,11 @@ function Dashboard({ currentUser, onLogout }) {
 
         const repairedData = repairThaiTextDeep(result.data);
         const repairedAssets = repairThaiTextDeep(result.assetsList);
+        if (localStorage.getItem('it_dashboard_wiped') === 'true') {
+          if (repairedAssets.length > 0 || Object.keys(repairedData || {}).length > 1) {
+            return;
+          }
+        }
         const hasDataChanged = JSON.stringify(repairedData) !== JSON.stringify(currentLocalData);
         const hasAssetsChanged = JSON.stringify(repairedAssets) !== JSON.stringify(currentLocalAssets);
 
@@ -1879,6 +1897,12 @@ function Dashboard({ currentUser, onLogout }) {
 
         const currentKey = getBangkokCurrentMonthKey();
         const freshEmptyData = getEmptyDashboardState();
+
+        await authFetch(`${API_BASE}/api/sync-all`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ data: freshEmptyData, assetsList: [] })
+        }).catch(() => {});
 
         localStorage.setItem('it_dashboard_wiped', 'true');
         localStorage.setItem('it_dashboard_data', JSON.stringify(freshEmptyData));
