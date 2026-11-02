@@ -125,7 +125,7 @@ function serializeAuthVersion(value) {
 
 async function findAuthUser(username) {
   const normalized = String(username || '').trim().toLocaleLowerCase('en-US');
-  if (!process.env.DATABASE_URL) {
+  if (!process.env.DATABASE_URL && !process.env.POSTGRES_URL && !process.env.STORAGE_URL && !process.env.PRISMA_DATABASE_URL) {
     const fallback = DEFAULT_AUTH_USERS.find((entry) => entry.username === normalized);
     return fallback ? { ...fallback, active: true, authVersion: 'default' } : null;
   }
@@ -488,7 +488,12 @@ function normalizeDbUrl(rawUrl) {
   return url;
 }
 
-const rawDbUrl = process.env.DATABASE_URL || '';
+const rawDbUrl = process.env.DATABASE_URL ||
+  process.env.POSTGRES_URL ||
+  process.env.STORAGE_URL ||
+  process.env.PRISMA_DATABASE_URL ||
+  process.env.POSTGRES_PRISMA_URL ||
+  process.env.POSTGRES_URL_NON_POOLING || '';
 const dbUrl = normalizeDbUrl(rawDbUrl);
 const isRenderInternal = dbUrl.includes('@dpg-') && !dbUrl.includes('.');
 
