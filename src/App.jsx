@@ -186,9 +186,17 @@ const buildEmptyMonth = (key, name) => ({
 });
 
 const getEmptyDashboardState = () => {
-  const key = getBangkokCurrentMonthKey();
-  const name = getBangkokCurrentMonthName(key);
-  return { [key]: buildEmptyMonth(key, name) };
+  const currentKey = getBangkokCurrentMonthKey();
+  const currentName = getBangkokCurrentMonthName(currentKey);
+  const octKey = '2026-10';
+  const octName = 'ตุลาคม 2569';
+  const state = {
+    [currentKey]: buildEmptyMonth(currentKey, currentName),
+  };
+  if (octKey !== currentKey) {
+    state[octKey] = buildEmptyMonth(octKey, octName);
+  }
+  return state;
 };
 
 const isValidDashboardData = (value) => {
@@ -2086,9 +2094,11 @@ function Dashboard({ currentUser, onLogout }) {
 
   const availableMonthKeys = Object.keys(data).sort();
   const fallbackMonthKey = availableMonthKeys[availableMonthKeys.length - 1] || '2026-07';
-  const activeDataSource = data[currentMonth] || data[fallbackMonthKey] || initialDashboardData['2026-07'];
+  const isWiped = localStorage.getItem('it_dashboard_wiped') === 'true';
+  const emptyMonthTemplate = buildEmptyMonth(currentMonth || fallbackMonthKey);
+  const activeDataSource = data[currentMonth] || data[fallbackMonthKey] || emptyMonthTemplate;
   const activeData = useMemo(() => ({
-    ...initialDashboardData['2026-07'],
+    ...(isWiped ? emptyMonthTemplate : (initialDashboardData['2026-07'] || emptyMonthTemplate)),
     ...activeDataSource,
     monthName: activeDataSource?.monthName || fallbackMonthKey,
     totalAssets: Number(activeDataSource?.totalAssets || 0),
@@ -2101,7 +2111,7 @@ function Dashboard({ currentUser, onLogout }) {
     assetsExpiringDetails: activeDataSource?.assetsExpiringDetails || [],
     softwareExpiringDetails: activeDataSource?.softwareExpiringDetails || [],
     ticketsList: activeDataSource?.ticketsList || [],
-  }), [activeDataSource, fallbackMonthKey]);
+  }), [activeDataSource, fallbackMonthKey, isWiped, emptyMonthTemplate]);
   const structuredProjects = activeData.ongoingProjects.filter(project => project.projectType);
   const improvementMetrics = structuredProjects.length > 0 ? {
     automationsDone: structuredProjects.filter(project => project.projectType === 'Automation' && project.status === 'เสร็จสิ้น').length,
